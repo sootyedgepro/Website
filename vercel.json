@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/chat/start", "destination": "/api/chat/start" },
-    { "source": "/api/chat", "destination": "/api/chat/index" }
+    { "source": "/api/chat/start", "destination": "/api/chat/start.cjs" },
+    { "source": "/api/chat", "destination": "/api/chat/index.cjs" }
   ]
 }

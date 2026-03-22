@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { v4 as uuidv4 } from "uuid";
+const Anthropic = require("@anthropic-ai/sdk");
+const { v4: uuidv4 } = require("uuid");
 
 const SYSTEM_PROMPT = `You are a friendly, conversational sales assistant for ${
   process.env.BRAND_NAME || "SootyEdge"
@@ -37,7 +37,7 @@ When all 4 questions are answered, output a JSON block at the END of your messag
 }
 </LEAD_DATA>`;
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   res.setHeader("Access-Control-Allow-Origin", "*");

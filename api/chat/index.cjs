@@ -1,6 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
-import Airtable from "airtable";
-import { v4 as uuidv4 } from "uuid";
+const Anthropic = require("@anthropic-ai/sdk");
+const Airtable = require("airtable");
+const { v4: uuidv4 } = require("uuid");
 
 const SYSTEM_PROMPT = `You are a friendly, conversational sales assistant for ${
   process.env.BRAND_NAME || "SootyEdge"
@@ -57,7 +57,7 @@ function buildRoutingMessage(leadData) {
 
 const sessions = new Map();
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   res.setHeader("Access-Control-Allow-Origin", "*");
