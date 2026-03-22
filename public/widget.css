@@ -228,6 +228,8 @@
   gap: 8px;
   align-items: flex-end;
   flex-shrink: 0;
+  position: relative;
+  z-index: 100000;
 }
 #lq-input {
   flex: 1;
@@ -243,6 +245,9 @@
   max-height: 100px;
   line-height: 1.4;
   transition: border-color 0.15s;
+  cursor: text;
+  position: relative;
+  z-index: 100001;
 }
 #lq-input::placeholder { color: var(--lq-muted); }
 #lq-input:focus { border-color: var(--lq-accent); }
