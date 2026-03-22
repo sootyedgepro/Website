@@ -1,5 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
-import Airtable from "airtable";
+const Anthropic = require("@anthropic-ai/sdk");
+const Airtable = require("airtable");
+const { v4: uuidv4 } = require("uuid");
 
 const SYSTEM_PROMPT = `You are a friendly, conversational sales assistant for ${
   process.env.BRAND_NAME || "SootyEdge"
@@ -70,10 +71,9 @@ Give them a free resource to get started: ${process.env.FREE_RESOURCE_LINK}
 Wish them well and close the conversation warmly. 2-3 sentences. Do NOT output any JSON.`;
 }
 
-// In-memory session store (resets on cold start — acceptable for serverless)
 const sessions = new Map();
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -86,7 +86,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "message is required" });
   }
 
-  const sessionId = clientSessionId || crypto.randomUUID();
+  const sessionId = clientSessionId || uuidv4();
   if (!sessions.has(sessionId)) {
     sessions.set(sessionId, { messages: [], leadData: null, logged: false });
   }
@@ -123,7 +123,6 @@ export default async function handler(req, res) {
       session.leadData = extractedLeadData;
       const score = scoreLabel(extractedLeadData);
 
-      // Log to Airtable async
       if (!session.logged) {
         session.logged = true;
         try {
@@ -157,4 +156,4 @@ export default async function handler(req, res) {
     console.error("[Chat] Error:", err.message);
     return res.status(500).json({ error: "Something went wrong. Please try again." });
   }
-}
+};

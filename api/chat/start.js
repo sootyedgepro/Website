@@ -1,5 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { v4 as uuidv4 } from "uuid";
+const Anthropic = require("@anthropic-ai/sdk");
+const { v4: uuidv4 } = require("uuid");
 
 const SYSTEM_PROMPT = `You are a friendly, conversational sales assistant for ${
   process.env.BRAND_NAME || "SootyEdge"
@@ -41,7 +41,7 @@ Internally track which question you're on (1-4). When all 4 are answered, output
 }
 </LEAD_DATA>`;
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -67,4 +67,4 @@ export default async function handler(req, res) {
     console.error("[Chat/Start] Error:", err.message);
     return res.status(500).json({ error: "Failed to start session." });
   }
-}
+};
