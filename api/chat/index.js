@@ -1,6 +1,6 @@
-const Anthropic = require("@anthropic-ai/sdk");
-const Airtable = require("airtable");
-const { v4: uuidv4 } = require("uuid");
+import Anthropic from "@anthropic-ai/sdk";
+import Airtable from "airtable";
+import { v4 as uuidv4 } from "uuid";
 
 const SYSTEM_PROMPT = `You are a friendly, conversational sales assistant for ${
   process.env.BRAND_NAME || "SootyEdge"
@@ -18,17 +18,13 @@ You must collect answers to these 4 questions IN ORDER, one at a time:
 RULES:
 - Start by greeting them and asking their first name, then immediately move to Question 1.
 - Ask only ONE question at a time. Wait for their answer before proceeding.
-- Acknowledge their answer briefly before asking the next question (e.g. "Nice!" / "Got it." / "That makes sense.")
+- Acknowledge their answer briefly before asking the next question.
 - Never ask more than one question in a single message.
 - Keep responses SHORT — 1-2 sentences max before asking the next question.
 - Sound like a knowledgeable trader, not a corporate bot.
-- If they go off-topic, gently redirect back to the next question.
-
-AFTER ALL 4 QUESTIONS ARE ANSWERED:
-You will receive routing instructions in the next system message. Follow them exactly.
 
 TRACKING:
-Internally track which question you're on (1-4). When all 4 are answered, output a special JSON block at the END of your message (after your normal response) in this exact format:
+When all 4 questions are answered, output a JSON block at the END of your message:
 <LEAD_DATA>
 {
   "name": "extracted name or null",
@@ -37,13 +33,12 @@ Internally track which question you're on (1-4). When all 4 are answered, output
   "q3_challenge": "their answer",
   "q4_budget": "their answer",
   "budget_amount": estimated numeric monthly budget as integer or null,
-  "trades_forex_crypto": true or false based on whether they mentioned forex or crypto,
+  "trades_forex_crypto": true or false,
   "qualification_complete": true
 }
 </LEAD_DATA>`;
 
-function scoreLabel(leadData) {
-  const { budget_amount, trades_forex_crypto } = leadData;
+function scoreLabel({ budget_amount, trades_forex_crypto }) {
   if (budget_amount >= 500 && trades_forex_crypto) return "HOT";
   if (budget_amount > 0 && budget_amount < 500) return "WARM";
   return "COLD";
@@ -52,28 +47,17 @@ function scoreLabel(leadData) {
 function buildRoutingMessage(leadData) {
   const { budget_amount, trades_forex_crypto } = leadData;
   if (budget_amount >= 500 && trades_forex_crypto) {
-    return `ROUTING: HOT LEAD
-The user qualifies for a discovery call. Budget $${budget_amount}/mo, trades forex/crypto.
-Tell them they're a great fit, that you'd love to have them speak with the team, and share this booking link: ${process.env.CAL_BOOKING_LINK}
-Be enthusiastic but not salesy. Keep it to 3 sentences max. Do NOT output any JSON.`;
+    return `ROUTING: HOT LEAD — Tell them they're a great fit and share: ${process.env.CAL_BOOKING_LINK}. 3 sentences max. No JSON.`;
   }
   if (budget_amount < 500 && budget_amount > 0) {
-    return `ROUTING: WARM LEAD
-The user has some budget but under $500/mo.
-Pitch the ${process.env.BRAND_NAME} Discord community at $99/month — real traders, daily signals, live Q&A.
-Share this link: ${process.env.DISCORD_LINK}
-Be encouraging, mention the low price point relative to potential gains. 2-3 sentences max. Do NOT output any JSON.`;
+    return `ROUTING: WARM LEAD — Pitch the Discord at $99/mo: ${process.env.DISCORD_LINK}. 2-3 sentences. No JSON.`;
   }
-  return `ROUTING: COLD LEAD
-The user is new or has no budget right now.
-Be kind and encouraging. Tell them everyone starts somewhere.
-Give them a free resource to get started: ${process.env.FREE_RESOURCE_LINK}
-Wish them well and close the conversation warmly. 2-3 sentences. Do NOT output any JSON.`;
+  return `ROUTING: COLD LEAD — Be encouraging and share this free resource: ${process.env.FREE_RESOURCE_LINK}. 2-3 sentences. No JSON.`;
 }
 
 const sessions = new Map();
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -93,14 +77,13 @@ module.exports = async function handler(req, res) {
   const session = sessions.get(sessionId);
   session.messages.push({ role: "user", content: message.trim() });
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const systemMessages = [{ type: "text", text: SYSTEM_PROMPT }];
-
   if (session.leadData?.qualification_complete) {
     systemMessages.push({ type: "text", text: buildRoutingMessage(session.leadData) });
   }
 
   try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 512,
@@ -111,7 +94,6 @@ module.exports = async function handler(req, res) {
     const rawText = response.content[0].text;
     const jsonMatch = rawText.match(/<LEAD_DATA>([\s\S]*?)<\/LEAD_DATA>/);
     let extractedLeadData = null;
-
     if (jsonMatch) {
       try { extractedLeadData = JSON.parse(jsonMatch[1].trim()); } catch {}
     }
@@ -122,24 +104,21 @@ module.exports = async function handler(req, res) {
     if (extractedLeadData?.qualification_complete && !session.leadData) {
       session.leadData = extractedLeadData;
       const score = scoreLabel(extractedLeadData);
-
       if (!session.logged) {
         session.logged = true;
         try {
           const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
-          await base("Leads").create([{
-            fields: {
-              "Session ID": sessionId,
-              Name: extractedLeadData.name || "Unknown",
-              Markets: extractedLeadData.q1_markets || "",
-              "Experience Level": extractedLeadData.q2_experience || "",
-              "Biggest Challenge": extractedLeadData.q3_challenge || "",
-              Budget: extractedLeadData.q4_budget || "",
-              "Budget Amount ($/mo)": extractedLeadData.budget_amount || 0,
-              "Trades Forex/Crypto": extractedLeadData.trades_forex_crypto ? "Yes" : "No",
-              "Lead Score": score,
-            }
-          }]);
+          await base("Leads").create([{ fields: {
+            "Session ID": sessionId,
+            Name: extractedLeadData.name || "Unknown",
+            Markets: extractedLeadData.q1_markets || "",
+            "Experience Level": extractedLeadData.q2_experience || "",
+            "Biggest Challenge": extractedLeadData.q3_challenge || "",
+            Budget: extractedLeadData.q4_budget || "",
+            "Budget Amount ($/mo)": extractedLeadData.budget_amount || 0,
+            "Trades Forex/Crypto": extractedLeadData.trades_forex_crypto ? "Yes" : "No",
+            "Lead Score": score,
+          }}]);
         } catch (err) {
           console.error("[Airtable] Error:", err.message);
         }
@@ -156,4 +135,4 @@ module.exports = async function handler(req, res) {
     console.error("[Chat] Error:", err.message);
     return res.status(500).json({ error: "Something went wrong. Please try again." });
   }
-};
+}
