@@ -251,6 +251,10 @@
 }
 #lq-input::placeholder { color: var(--lq-muted); }
 #lq-input:focus { border-color: var(--lq-accent); }
+#lq-input, #lq-input:focus { cursor: text !important; }
+#lq-send { cursor: pointer !important; }
+#lq-close { cursor: pointer !important; }
+#lq-launcher { cursor: pointer !important; }
 
 #lq-send {
   width: 40px;
