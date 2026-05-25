@@ -542,6 +542,7 @@ function finish(){
   $("rcost").textContent = R.cost;
   $("rfix").textContent = R.fix;
   $("patternField").value = R.name;
+  $("patternField").dataset.key = best;
   $("sent").style.display = "none";
   $("eform").style.display = "flex";
   $("email").value = "";
@@ -573,7 +574,10 @@ function submitEmail(e){
     body: JSON.stringify({
       email: v,
       source: "diagnostic",
-      meta: { pattern: $("patternField").value }
+      meta: {
+        pattern: $("patternField").value,
+        patternKey: $("patternField").dataset.key || ""
+      }
     })
   }).then(function(res){
     if (!res.ok) throw new Error("subscribe failed");
