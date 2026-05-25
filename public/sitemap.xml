@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/0.9">
+  <url>
+    <loc>https://sootyedge.com/</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://sootyedge.com/Computer_Hub.png</image:loc>
+      <image:title>SootyEdge Flow Tracker on TradingView</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://sootyedge.com/Phone_Hub.png</image:loc>
+      <image:title>SootyEdge Key Levels on mobile</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://sootyedge.com/dex</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://sootyedge.com/refund-policy</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>

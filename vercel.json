@@ -1,6 +1,38 @@
 {
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": "dist",
   "rewrites": [
     { "source": "/api/chat/start", "destination": "/api/chat/start" },
-    { "source": "/api/chat", "destination": "/api/chat/index" }
+    { "source": "/api/chat", "destination": "/api/chat/index" },
+    { "source": "/api/analyze/feedback", "destination": "/api/analyze/feedback" },
+    { "source": "/api/analyze/track-outcome", "destination": "/api/analyze/track-outcome" },
+    { "source": "/api/analyze", "destination": "/api/analyze/index" },
+    { "source": "/api/dex/chat", "destination": "/api/dex/chat" },
+    { "source": "/api/subscribe", "destination": "/api/subscribe" },
+    { "source": "/dex", "destination": "/index.html" },
+    { "source": "/dex/", "destination": "/index.html" },
+    { "source": "/refund-policy", "destination": "/refund-policy.html" },
+    { "source": "/refund-policy/", "destination": "/refund-policy.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://buy.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com; frame-src https://js.stripe.com https://buy.stripe.com; base-uri 'self'; form-action 'self' https://buy.stripe.com; frame-ancestors 'none'; upgrade-insecure-requests" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
   ]
 }

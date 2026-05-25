@@ -1,5 +1,7 @@
 const Anthropic = require("@anthropic-ai/sdk");
 const { v4: uuidv4 } = require("uuid");
+const { applyCors, clientIp } = require("../_lib/cors");
+const rateLimit = require("../_lib/rate-limit");
 
 const SYSTEM_PROMPT = `You are a friendly, conversational sales assistant for ${
   process.env.BRAND_NAME || "SootyEdge"
@@ -42,11 +44,17 @@ When all 6 questions are answered, output a JSON block at the END of your messag
 </LEAD_DATA>`;
 
 module.exports = async function handler(req, res) {
+  applyCors(req, res);
+  if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).end();
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  // IP-only rate limit — this endpoint has no email yet.
+  const ip = clientIp(req);
+  const rl = rateLimit.check({ ip });
+  if (!rl.allowed) {
+    res.setHeader("Retry-After", String(rl.retryAfterSec));
+    return res.status(429).json({ error: "Too many requests.", retryAfterSec: rl.retryAfterSec });
+  }
 
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
