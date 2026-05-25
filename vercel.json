@@ -14,7 +14,13 @@
     { "source": "/dex", "destination": "/index.html" },
     { "source": "/dex/", "destination": "/index.html" },
     { "source": "/refund-policy", "destination": "/refund-policy.html" },
-    { "source": "/refund-policy/", "destination": "/refund-policy.html" }
+    { "source": "/refund-policy/", "destination": "/refund-policy.html" },
+    { "source": "/diagnostic", "destination": "/diagnostic.html" },
+    { "source": "/diagnostic/", "destination": "/diagnostic.html" },
+    { "source": "/broken-trader", "destination": "/diagnostic.html" },
+    { "source": "/broken-trader/", "destination": "/diagnostic.html" },
+    { "source": "/quiz", "destination": "/diagnostic.html" },
+    { "source": "/quiz/", "destination": "/diagnostic.html" }
   ],
   "headers": [
     {

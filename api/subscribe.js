@@ -10,6 +10,8 @@ module.exports = async function handler(req, res) {
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
     const email = String(body.email || "").trim().toLowerCase();
     const source = String(body.source || "unknown").slice(0, 64);
+    const meta = (body && typeof body.meta === "object" && body.meta) || {};
+    const pattern = meta.pattern ? String(meta.pattern).slice(0, 80) : "";
 
     if (!EMAIL_RE.test(email) || email.length > 254) {
       return res.status(400).json({ error: "Invalid email" });
@@ -21,17 +23,18 @@ module.exports = async function handler(req, res) {
     const ua = String(req.headers["user-agent"] || "").slice(0, 200);
     const ts = new Date().toISOString();
 
-    console.log("[subscribe]", JSON.stringify({ ts, email, source, ip, ua }));
+    console.log("[subscribe]", JSON.stringify({ ts, email, source, pattern, ip, ua }));
 
     const webhook = process.env.DISCORD_SUBSCRIBE_WEBHOOK;
     if (webhook) {
       const payload = {
         username: "SootyEdge List",
         embeds: [{
-          title: "New email subscriber",
+          title: pattern ? "New diagnostic signup" : "New email subscriber",
           color: 0xFFD600,
           fields: [
             { name: "Email", value: "`" + email + "`", inline: false },
+            ...(pattern ? [{ name: "Pattern", value: pattern, inline: true }] : []),
             { name: "Source", value: source, inline: true },
             { name: "Time (UTC)", value: ts, inline: true },
             ...(ip ? [{ name: "IP", value: ip, inline: true }] : []),

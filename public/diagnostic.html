@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#060608" />
+<title>The Broken Trader Diagnostic — SootyEdge</title>
+<meta name="description" content="Most traders lose money for one dominant reason — and almost none of them have named it correctly. Take the 90-second diagnostic." />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="SootyEdge" />
+<meta property="og:url" content="https://sootyedge.com/diagnostic" />
+<meta property="og:title" content="The Broken Trader Diagnostic — SootyEdge" />
+<meta property="og:description" content="12 honest questions. 90 seconds. Find out which pattern is really costing you." />
+<meta property="og:image" content="https://sootyedge.com/Computer_Hub.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@zi_invest" />
+<meta name="twitter:title" content="The Broken Trader Diagnostic — SootyEdge" />
+<meta name="twitter:description" content="12 honest questions. 90 seconds. Find out which pattern is really costing you." />
+<meta name="twitter:image" content="https://sootyedge.com/Computer_Hub.png" />
+
+<link rel="icon" type="image/svg+xml" href="/sootyedge_logo.svg" />
+<link rel="canonical" href="https://sootyedge.com/diagnostic" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+
+<style>
+  :root{
+    --y:#FFD600; --y-d:#B89400; --y-l:#FFE34D;
+    --g:#03CD00; --r:#FF3333; --r-d:#8A0000;
+    --dk:#060608; --dk2:#0a0a0c;
+    --sf:rgba(18,18,22,.8); --sf2:rgba(28,28,32,.9);
+    --bd:rgba(255,255,255,.08); --bd-y:rgba(255,214,0,.25);
+    --tx:#D8D8E4; --tx-d:#fff;
+    --mt:#A4A4B8; --mt-d:#606078;
+    --R:14px; --R2:18px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(900px 600px at 50% -10%, rgba(255,214,0,.06) 0%, transparent 55%),
+      radial-gradient(1200px 800px at 50% 110%, rgba(255,214,0,.03) 0%, transparent 55%),
+      var(--dk);
+    color:var(--tx);
+    font-family:'Crimson Pro', Georgia, serif;
+    font-size:17px;line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    min-height:100%;
+    padding:26px 16px 60px;
+    overflow-x:hidden;
+  }
+  .wrap{max-width:600px;margin:0 auto;position:relative;}
+
+  /* BRAND */
+  .brandline{
+    display:flex;align-items:center;gap:10px;margin-bottom:24px;
+    padding-bottom:18px;border-bottom:1px solid var(--bd);
+  }
+  .brandline img{width:24px;height:24px;}
+  .brand{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:18px;letter-spacing:.18em;color:var(--tx-d);
+    line-height:1;
+  }
+  .brand .e{color:var(--y);}
+
+  /* SCREENS */
+  .screen{display:none;animation:fade .4s cubic-bezier(.16,1,.3,1);}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+  /* INTRO */
+  .kicker{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;font-weight:500;letter-spacing:.22em;
+    color:var(--y);margin:18px 0 16px;text-transform:uppercase;
+    display:inline-flex;align-items:center;gap:8px;
+  }
+  .kicker::before{
+    content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
+    background:var(--y);box-shadow:0 0 12px rgba(255,214,0,.6);
+  }
+  h1{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:56px;line-height:1;font-weight:400;letter-spacing:.01em;
+    color:var(--tx-d);text-transform:uppercase;
+  }
+  h1 .hl{color:var(--y);}
+  .sub{
+    color:var(--mt);font-size:17px;line-height:1.6;margin-top:18px;
+    font-weight:300;
+  }
+  .meta{
+    display:inline-flex;align-items:center;gap:10px;margin-top:22px;
+    font-family:'JetBrains Mono', monospace;font-size:12px;letter-spacing:.08em;
+    color:var(--tx);background:var(--sf);border:1px solid var(--bd);
+    border-radius:999px;padding:10px 18px;
+  }
+  .meta b{color:var(--y);font-weight:700;}
+  .learn{margin-top:26px;display:flex;flex-direction:column;gap:12px;}
+  .learn div{
+    display:flex;gap:12px;align-items:flex-start;
+    font-size:16px;color:var(--tx);line-height:1.55;
+  }
+  .tick{
+    color:var(--y);font-weight:700;flex:0 0 auto;
+    font-family:'JetBrains Mono', monospace;font-size:14px;
+    margin-top:3px;
+  }
+
+  /* BUTTONS */
+  .btn{
+    display:block;width:100%;border:0;cursor:pointer;
+    background:var(--y);color:#06231f;font-weight:700;
+    font-family:'Bebas Neue', sans-serif;
+    font-size:17px;letter-spacing:.12em;padding:18px;border-radius:12px;
+    margin-top:28px;text-transform:uppercase;
+    transition:transform .12s ease, box-shadow .15s ease, filter .15s ease;
+    box-shadow:0 0 0 1px rgba(255,214,0,.1), 0 10px 30px rgba(255,214,0,.12);
+  }
+  .btn:hover{filter:brightness(1.05);box-shadow:0 0 0 1px rgba(255,214,0,.2), 0 15px 40px rgba(255,214,0,.2);}
+  .btn:active{transform:scale(.98);}
+  .btn[disabled]{opacity:.6;cursor:wait;}
+  .btn.ghost{
+    background:transparent;color:var(--mt);font-weight:400;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;letter-spacing:.12em;
+    padding:12px;margin-top:14px;box-shadow:none;
+  }
+  .btn.ghost:hover{color:var(--y);filter:none;background:transparent;}
+  .disc{
+    margin-top:28px;font-size:12px;color:var(--mt-d);line-height:1.6;
+    font-family:'JetBrains Mono', monospace;letter-spacing:.02em;
+    border-top:1px solid var(--bd);padding-top:16px;
+  }
+
+  /* QUIZ */
+  .qtop{
+    display:flex;justify-content:space-between;align-items:center;
+    margin:6px 0 14px;font-size:11px;color:var(--mt);font-weight:500;
+    font-family:'JetBrains Mono', monospace;letter-spacing:.18em;
+    text-transform:uppercase;
+  }
+  .qcount b{color:var(--y);font-weight:700;}
+  .bar{
+    height:4px;background:rgba(255,255,255,.05);border-radius:99px;
+    overflow:hidden;margin-bottom:30px;border:1px solid var(--bd);
+  }
+  .fill{
+    height:100%;width:0;
+    background:linear-gradient(90deg, var(--y-d), var(--y));
+    border-radius:99px;transition:width .4s cubic-bezier(.16,1,.3,1);
+    box-shadow:0 0 12px rgba(255,214,0,.4);
+  }
+  .qtext{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:30px;font-weight:400;line-height:1.15;letter-spacing:.01em;
+    color:var(--tx-d);margin-bottom:22px;text-transform:uppercase;
+  }
+  .opts{display:flex;flex-direction:column;gap:10px;}
+  .opt{
+    text-align:left;width:100%;cursor:pointer;
+    font-family:'Crimson Pro', Georgia, serif;
+    background:var(--sf);border:1px solid var(--bd);color:var(--tx);
+    border-radius:12px;padding:16px 18px;font-size:16px;line-height:1.45;
+    display:flex;gap:14px;align-items:center;
+    transition:border-color .14s ease, background .14s ease, transform .08s ease;
+  }
+  .opt:hover{border-color:var(--bd-y);background:var(--sf2);}
+  .opt:active{transform:scale(.99);}
+  .opt.sel{
+    border-color:var(--y);background:rgba(255,214,0,.06);
+    box-shadow:0 0 0 1px rgba(255,214,0,.3), 0 4px 20px rgba(255,214,0,.08);
+  }
+  .dot{
+    width:18px;height:18px;border-radius:50%;border:2px solid var(--mt-d);
+    flex:0 0 auto;transition:all .14s ease;
+  }
+  .opt:hover .dot{border-color:var(--y);}
+  .opt.sel .dot{
+    border-color:var(--y);background:var(--y);
+    box-shadow:inset 0 0 0 4px var(--dk);
+  }
+  .back{
+    margin-top:24px;background:none;border:0;color:var(--mt);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    cursor:pointer;padding:6px 2px;transition:color .12s ease;
+  }
+  .back:hover{color:var(--y);}
+  .back[disabled]{opacity:0;pointer-events:none;}
+
+  /* RESULT */
+  .rlabel{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;font-weight:500;letter-spacing:.22em;
+    color:var(--y);margin:8px 0 12px;text-transform:uppercase;
+  }
+  .rname{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:52px;font-weight:400;line-height:1;color:var(--y);
+    letter-spacing:.01em;text-transform:uppercase;
+  }
+  .rtag{
+    font-style:italic;color:var(--tx);font-size:18px;
+    margin-top:14px;line-height:1.5;font-weight:300;
+  }
+  .block{
+    background:var(--sf);border:1px solid var(--bd);
+    border-left:3px solid var(--mt-d);
+    border-radius:12px;padding:18px 20px;margin-top:14px;
+  }
+  .block.cost{border-left-color:var(--r);}
+  .block.fix{
+    border-left-color:var(--y);
+    background:linear-gradient(135deg, rgba(255,214,0,.04), var(--sf));
+    box-shadow:0 0 0 1px rgba(255,214,0,.1);
+  }
+  .blabel{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;font-weight:500;letter-spacing:.22em;
+    color:var(--mt);margin-bottom:10px;text-transform:uppercase;
+  }
+  .block.cost .blabel{color:var(--r);}
+  .block.fix .blabel{color:var(--y);}
+  .btext{font-size:15.5px;line-height:1.65;color:var(--tx);}
+
+  /* CTA */
+  .cta{
+    background:linear-gradient(160deg, rgba(255,214,0,.06), rgba(18,18,22,.9));
+    border:1px solid var(--bd-y);
+    border-radius:16px;padding:24px 22px;margin-top:28px;
+    box-shadow:0 20px 50px rgba(0,0,0,.4), 0 0 40px rgba(255,214,0,.06);
+  }
+  .cta h3{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:26px;font-weight:400;line-height:1.15;
+    letter-spacing:.01em;color:var(--tx-d);text-transform:uppercase;
+  }
+  .cta p{color:var(--mt);font-size:14.5px;margin-top:10px;line-height:1.55;}
+  .field{margin-top:18px;display:flex;flex-direction:column;gap:12px;}
+  .field input{
+    width:100%;padding:15px 16px;border-radius:11px;
+    border:1px solid var(--bd);background:rgba(0,0,0,.4);
+    color:var(--tx-d);font-size:15px;
+    font-family:'JetBrains Mono', monospace;
+    transition:border-color .14s ease;
+  }
+  .field input::placeholder{color:var(--mt-d);}
+  .field input:focus{outline:none;border-color:var(--y);}
+  .field input.err{border-color:var(--r);}
+  .err-msg{
+    color:var(--r);font-size:13px;
+    font-family:'JetBrains Mono', monospace;
+    margin-top:-4px;display:none;
+  }
+  .err-msg.show{display:block;}
+  .sent{
+    display:none;margin-top:18px;
+    background:rgba(255,214,0,.06);border:1px solid var(--bd-y);
+    border-radius:12px;padding:18px;font-size:15px;line-height:1.6;color:var(--tx);
+  }
+  .sent b{
+    color:var(--y);font-family:'Bebas Neue', sans-serif;
+    font-size:18px;letter-spacing:.06em;display:block;margin-bottom:6px;
+    text-transform:uppercase;font-weight:400;
+  }
+  .footer{
+    margin-top:28px;font-size:12px;color:var(--mt-d);line-height:1.6;
+    font-family:'JetBrains Mono', monospace;letter-spacing:.02em;
+    border-top:1px solid var(--bd);padding-top:18px;
+  }
+
+  @media(max-width:430px){
+    h1{font-size:44px;}
+    .rname{font-size:42px;}
+    .qtext{font-size:25px;}
+    .cta h3{font-size:22px;}
+    body{padding:20px 14px 44px;}
+    .opt{padding:14px 16px;font-size:15px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a href="https://sootyedge.com" class="brandline" style="text-decoration:none;color:inherit;">
+    <img src="/sootyedge_logo.svg" alt="SootyEdge" />
+    <span class="brand">SOOTY<span class="e">EDGE</span></span>
+  </a>
+
+  <!-- ===================== INTRO ===================== -->
+  <section id="intro" class="screen active">
+    <div class="kicker">FREE 90-SECOND DIAGNOSTIC</div>
+    <h1>The Broken Trader <span class="hl">Diagnostic</span></h1>
+    <p class="sub">Most traders lose money for one dominant reason — and almost none of them have named it correctly. Answer 12 honest questions and find out which pattern is really costing you.</p>
+    <div class="meta">12 questions <span style="color:var(--mt-d);">·</span> about <b>90 seconds</b></div>
+    <div class="learn">
+      <div><span class="tick">→</span><span>Your single dominant trading flaw — named precisely.</span></div>
+      <div><span class="tick">→</span><span>What that pattern is quietly costing you.</span></div>
+      <div><span class="tick">→</span><span>The one fix to focus on first — before anything else.</span></div>
+    </div>
+    <button class="btn" onclick="start()">Start the Diagnostic</button>
+    <p class="disc">Educational only. Trading carries significant risk and most retail traders lose money. This diagnostic does not provide financial advice and promises no income or trading outcome.</p>
+  </section>
+
+  <!-- ===================== QUIZ ===================== -->
+  <section id="quiz" class="screen">
+    <div class="qtop">
+      <span class="qcount">QUESTION <b id="qnum">1</b> / 12</span>
+      <span id="qpill">EXECUTION</span>
+    </div>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div class="qtext" id="qtext">—</div>
+    <div class="opts" id="opts"></div>
+    <button class="back" id="back" onclick="back()">‹ BACK</button>
+  </section>
+
+  <!-- ===================== RESULT ===================== -->
+  <section id="result" class="screen">
+    <div class="rlabel">YOUR DOMINANT PATTERN</div>
+    <div class="rname" id="rname">—</div>
+    <div class="rtag" id="rtag">—</div>
+
+    <div class="block"><div class="blabel">YOUR PATTERN</div><div class="btext" id="rpattern">—</div></div>
+    <div class="block cost"><div class="blabel">WHAT IT&rsquo;S COSTING YOU</div><div class="btext" id="rcost">—</div></div>
+    <div class="block fix"><div class="blabel">YOUR FIRST FIX</div><div class="btext" id="rfix">—</div></div>
+
+    <div class="cta">
+      <h3>Want your full breakdown and a step-by-step fix?</h3>
+      <p>Get the complete report for your pattern, plus a seat at the next free Edge masterclass.</p>
+      <form class="field" id="eform" onsubmit="return submitEmail(event)">
+        <input type="email" id="email" placeholder="your@email.com" autocomplete="email" required />
+        <input type="hidden" id="patternField" name="pattern" value="" />
+        <div class="err-msg" id="errMsg">Please enter a valid email.</div>
+        <button type="submit" class="btn" id="submitBtn" style="margin-top:0">Send Me My Fix</button>
+      </form>
+      <div class="sent" id="sent">
+        <b>YOU'RE IN.</b>
+        Check your inbox for your full Broken Trader report and your masterclass details.
+      </div>
+    </div>
+
+    <button class="btn ghost" onclick="retake()">↻ RETAKE THE DIAGNOSTIC</button>
+    <p class="footer">Educational content only — not financial advice. Trading is high-risk and the majority of retail traders lose money. Your result reflects your own answers and is a starting point for improvement, not a prediction or guarantee of any trading outcome.</p>
+  </section>
+
+</div>
+
+<script>
+/* ---------------- DATA ---------------- */
+var QUESTIONS = [
+  { pill:"EXECUTION", q:"On a typical trading day, how many trades do you take?", o:[
+    {t:"1–2, planned in advance", s:{}},
+    {t:"3–5", s:{over:1}},
+    {t:"6–15", s:{over:2}},
+    {t:"15+ — I scalp, or I lose count", s:{over:3}},
+  ]},
+  { pill:"AFTER A LOSS", q:"You just took a losing trade. What usually happens next?", o:[
+    {t:"I step away — that trade is done", s:{}},
+    {t:"I take another trade quickly to win it back", s:{rev:3}},
+    {t:"One loss turns into a string of trades", s:{rev:3, over:1}},
+    {t:"I shrink my size but keep trading", s:{prof:1, over:1}},
+  ]},
+  { pill:"STRATEGY", q:"How many different strategies or systems have you traded in the last 12 months?", o:[
+    {t:"One — I've stuck with it", s:{}},
+    {t:"Two", s:{hop:1}},
+    {t:"Three or four", s:{hop:2}},
+    {t:"Five or more — I keep searching", s:{hop:3}},
+  ]},
+  { pill:"WINNERS", q:"Your winning trades usually…", o:[
+    {t:"Run to a target I set in advance", s:{}},
+    {t:"Get cut early — I take profit before my target", s:{prof:3}},
+    {t:"Scratch out, because I move my stop and exit", s:{prof:2, rev:1}},
+    {t:"It's random — no consistent pattern", s:{hop:1}},
+  ]},
+  { pill:"LOSERS", q:"When a trade goes against you, do you add to it?", o:[
+    {t:"Never — I respect my stop", s:{}},
+    {t:"Sometimes, if I still believe the idea", s:{prof:2}},
+    {t:"Often — I average down a lot", s:{prof:3}},
+    {t:"I don't really use stops", s:{prof:2, over:1}},
+  ]},
+  { pill:"FUNDING", q:"How do you fund your trading?", o:[
+    {t:"My own capital", s:{}},
+    {t:"A prop-funded account I'm trying to keep", s:{ham:2}},
+    {t:"Mostly buying and re-buying prop challenges", s:{ham:3}},
+    {t:"A mix of my own capital and prop", s:{ham:1}},
+  ]},
+  { pill:"PROP CHALLENGES", q:"How many prop-firm challenges have you bought in the last 12 months?", o:[
+    {t:"Zero", s:{}},
+    {t:"1–2", s:{ham:1}},
+    {t:"3–6", s:{ham:2}},
+    {t:"7 or more", s:{ham:3}},
+  ]},
+  { pill:"YOUR EDGE", q:"Can you clearly explain what makes a trade an “A+ setup” for you?", o:[
+    {t:"Yes — it's written down and tested", s:{}},
+    {t:"Roughly, but it's mostly in my head", s:{hop:1}},
+    {t:"Not really — I take what looks good in the moment", s:{hop:3}},
+    {t:"Honestly, everything feels like an A+ in the moment", s:{hop:2, over:1}},
+  ]},
+  { pill:"AFTER A BAD WEEK", q:"After a losing week, your first instinct is to…", o:[
+    {t:"Review my process and my data", s:{}},
+    {t:"Go learn a new strategy, indicator or concept", s:{hop:3}},
+    {t:"Get back in and trade my way out of it", s:{rev:3}},
+    {t:"Wonder if I'm even cut out for this", s:{plat:3}},
+  ]},
+  { pill:"YOUR JOURNEY", q:"Where are you in your trading journey?", o:[
+    {t:"Under a year in — still learning", s:{over:2}},
+    {t:"1–3 years — inconsistent results", s:{hop:1, rev:1}},
+    {t:"3+ years — stuck around break-even", s:{plat:3}},
+    {t:"Funded, but I can't hold an account or get paid out", s:{ham:2}},
+  ]},
+  { pill:"HONEST MOMENT", q:"Which of these hits the hardest?", o:[
+    {t:"“Sticky notes telling me to stop don't work.”", s:{over:3}},
+    {t:"“After every loss I go down a rabbit hole for a better strategy.”", s:{hop:3}},
+    {t:"“Revenge trading feels like a drug I can't put down.”", s:{rev:3}},
+    {t:"“I see a red candle and I take my profit and run.”", s:{prof:3}},
+    {t:"“I keep getting funded — and keep losing the account.”", s:{ham:3}},
+    {t:"“After all this time, can I even call myself a trader?”", s:{plat:3}},
+  ]},
+  { pill:"YOUR PROCESS", q:"What is your relationship with journaling and trade review?", o:[
+    {t:"I journal and review every single week", s:{}},
+    {t:"I have a tool, but I rarely look at it", s:{plat:1, hop:1}},
+    {t:"I track loosely, mostly in my head", s:{over:1, hop:1}},
+    {t:"I don't track my trades at all", s:{over:2, hop:1}},
+  ]},
+];
+
+var RESULTS = {
+  over:{
+    name:"The Overtrader",
+    tag:"You're trading on volume, not edge.",
+    pattern:"Your dominant pattern is overtrading with no enforced structure. The number of trades you take has almost nothing to do with how much real opportunity is actually in the market that day.",
+    cost:"It costs you the one thing a developing trader needs most — clean data. Buried inside 30, 50, 100 trades a day, you cannot tell what is working, so you cannot improve. Meanwhile fees and small losses bleed the account every session.",
+    fix:"Your first fix is not willpower and it is not a sticky note. It is an enforced cap: a hard maximum trade count, a hard cut-off time, and a forced break after every single trade.",
+  },
+  hop:{
+    name:"The Strategy Hopper",
+    tag:"You treat every loss as a knowledge gap.",
+    pattern:"Your dominant pattern is strategy hopping. Every losing run sends you hunting for a new system, indicator or concept — so you almost never trade the same approach twice.",
+    cost:"It costs you years. You never give a single strategy enough data to know whether it actually works, so you are permanently starting over. More information is making you worse, not better.",
+    fix:"Your first fix is subtraction, not addition: pick ONE strategy, define your A+, B and C setup criteria in writing, and test it across 100 trades at a fixed risk before you change a thing.",
+  },
+  rev:{
+    name:"The Revenge Trader",
+    tag:"One loss flips a switch — and you chase.",
+    pattern:"Your dominant pattern is revenge trading. A single loss triggers a string of impulsive trades to “make it back”, driven by competitiveness and a deep dislike of being wrong.",
+    cost:"It costs you your biggest drawdowns. If you reviewed your data honestly, almost all of your worst damage happens in the 10–15 minutes right after a loss — not from your strategy, but from your reaction to it.",
+    fix:"Your first fix is a circuit breaker: a hard 10-minute gap between every trade, and a daily max-loss rule that ends your session — enforced, not optional.",
+  },
+  prof:{
+    name:"The Premature Profit-Taker",
+    tag:"You cut winners early and let losers run.",
+    pattern:"Your dominant pattern is broken trade management. You take profit before your target, you add to losing trades, and you react to your P&L instead of to price.",
+    cost:"It costs you your risk-to-reward. Small wins and big losses is the exact inverse of an edge — you can be right most of the time and still lose money overall.",
+    fix:"Your first fix is mechanical: switch your candles to black and white so colour stops driving you, scale out on a written plan, and let trades reach a defined target.",
+  },
+  ham:{
+    name:"The Prop-Firm Hamster",
+    tag:"You keep getting funded — and keep losing it.",
+    pattern:"Your dominant pattern is prop-firm churning. You buy challenge after challenge, chase the payout window, and end up trading the firm's rules instead of an actual edge.",
+    cost:"It costs you real money — hundreds to thousands a year in fees — and, worse, it costs you the chance to build a tested edge, because every reset wipes out the experiment.",
+    fix:"Your first fix is to stop buying challenges until you have a strategy proven on consistent risk. Build the edge that earns and holds payouts — then let funding be a bridge, not a slot machine.",
+  },
+  plat:{
+    name:"The Plateau Trader",
+    tag:"Years in, stuck at break-even, doubting yourself.",
+    pattern:"Your dominant pattern is the plateau. You have put in the time and you are not blowing up — but you are not progressing either, and imposter syndrome is creeping in.",
+    cost:"What it costs you is not mainly money — it is momentum and belief. You compare yourself to louder traders and quietly wonder whether you are really cut out for this.",
+    fix:"Your first fix is not more information — you already have plenty. It is a real feedback loop and outside accountability: defined milestones, a weekly review, and people who can see your blind spots.",
+  },
+};
+var TIEBREAK = ["rev","ham","prof","hop","over","plat"];
+
+/* ---------------- STATE ---------------- */
+var step = 0;
+var answers = [];
+
+function $(id){ return document.getElementById(id); }
+function show(id){
+  ["intro","quiz","result"].forEach(function(s){
+    $(s).classList.toggle("active", s===id);
+  });
+  window.scrollTo(0,0);
+}
+
+function start(){ step=0; answers=[]; show("quiz"); render(); }
+
+function render(){
+  var Q = QUESTIONS[step];
+  $("qnum").textContent = step+1;
+  $("qpill").textContent = Q.pill;
+  $("qtext").textContent = Q.q;
+  $("fill").style.width = ((step)/QUESTIONS.length*100) + "%";
+  $("back").disabled = (step===0);
+  var box = $("opts");
+  box.innerHTML = "";
+  Q.o.forEach(function(opt, i){
+    var b = document.createElement("button");
+    b.className = "opt" + (answers[step]===i ? " sel" : "");
+    b.type = "button";
+    var dot = document.createElement("span");
+    dot.className = "dot";
+    var txt = document.createElement("span");
+    txt.textContent = opt.t;
+    b.appendChild(dot);
+    b.appendChild(txt);
+    b.onclick = function(){ choose(i); };
+    box.appendChild(b);
+  });
+}
+
+function choose(i){
+  answers[step] = i;
+  var nodes = $("opts").children;
+  for (var n=0;n<nodes.length;n++) nodes[n].className = "opt" + (n===i?" sel":"");
+  $("fill").style.width = ((step+1)/QUESTIONS.length*100) + "%";
+  setTimeout(function(){
+    if (step < QUESTIONS.length-1){ step++; render(); }
+    else finish();
+  }, 260);
+}
+
+function back(){
+  if (step>0){ step--; render(); }
+}
+
+function finish(){
+  var score = {over:0,hop:0,rev:0,prof:0,ham:0,plat:0};
+  answers.forEach(function(ai, qi){
+    var s = QUESTIONS[qi].o[ai].s;
+    for (var k in s) score[k] += s[k];
+  });
+  var best = TIEBREAK[0], bestVal = -1;
+  TIEBREAK.forEach(function(k){
+    if (score[k] > bestVal){ bestVal = score[k]; best = k; }
+  });
+  var R = RESULTS[best];
+  $("rname").textContent = R.name;
+  $("rtag").textContent = R.tag;
+  $("rpattern").textContent = R.pattern;
+  $("rcost").textContent = R.cost;
+  $("rfix").textContent = R.fix;
+  $("patternField").value = R.name;
+  $("sent").style.display = "none";
+  $("eform").style.display = "flex";
+  $("email").value = "";
+  $("errMsg").classList.remove("show");
+  $("email").classList.remove("err");
+  show("result");
+}
+
+function submitEmail(e){
+  e.preventDefault();
+  var input = $("email");
+  var btn = $("submitBtn");
+  var errMsg = $("errMsg");
+  var v = input.value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){
+    input.classList.add("err");
+    errMsg.classList.add("show");
+    input.focus();
+    return false;
+  }
+  input.classList.remove("err");
+  errMsg.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "SENDING…";
+
+  fetch("/api/subscribe", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      email: v,
+      source: "diagnostic",
+      meta: { pattern: $("patternField").value }
+    })
+  }).then(function(res){
+    if (!res.ok) throw new Error("subscribe failed");
+    return res.json();
+  }).then(function(){
+    $("eform").style.display = "none";
+    $("sent").style.display = "block";
+  }).catch(function(){
+    btn.disabled = false;
+    btn.textContent = "Send Me My Fix";
+    errMsg.textContent = "Something went wrong. Try again in a moment.";
+    errMsg.classList.add("show");
+  });
+  return false;
+}
+
+function retake(){ show("intro"); }
+</script>
+</body>
+</html>
