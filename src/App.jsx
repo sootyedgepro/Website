@@ -73,7 +73,7 @@ function ChartSVG(){return(
 
 function Nav(){const[s,setS]=useState(false);useEffect(()=>{const f=()=>setS(window.scrollY>40);f();window.addEventListener("scroll",f,{passive:true});return()=>window.removeEventListener("scroll",f)},[]);return(
   <nav className={`nv${s?" nvs":""}`}><a href="#" className="nv-logo hov" onClick={e=>{e.preventDefault();window.scrollTo({top:0,behavior:"smooth"})}}><img src="/sootyedge_logo.svg" alt="SootyEdge" style={{width:"26px",height:"26px",marginRight:"10px"}}/><span className="nv-s">SOOTY</span><span className="nv-e">EDGE</span></a>
-  <div className="nv-links">{[["#how","HOW IT WORKS"],["#system","SYSTEM"],["#benefits","BENEFITS"],["#pricing","PRICING"],["#faq","FAQ"],["https://discord.gg/wztT2bD9N6","JOIN DISCORD"]].map(([h,t])=><SmoothLink key={t} href={h} className="nv-a hov">{t}</SmoothLink>)}</div>
+  <div className="nv-links">{[["#how","HOW IT WORKS"],["#system","SYSTEM"],["#benefits","BENEFITS"],["#pricing","PRICING"],["#faq","FAQ"],["https://discord.gg/Z8K6scxjrZ","JOIN DISCORD"]].map(([h,t])=><SmoothLink key={t} href={h} className="nv-a hov">{t}</SmoothLink>)}</div>
   <MagBtn href="#pricing" className="nv-cta">GET ACCESS</MagBtn></nav>
 )}
 

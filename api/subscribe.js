@@ -93,7 +93,7 @@ function emailHtml(r) {
         <div style="background:linear-gradient(160deg,#1d3a39,#16282e);border:1px solid #0E6E6B;border-radius:12px;padding:22px;margin-bottom:20px;">
           <div style="font-size:17px;font-weight:800;color:#EAF0F1;line-height:1.3;margin-bottom:8px;">Want to go deeper?</div>
           <p style="margin:0 0 16px;color:#9FB0B5;font-size:14px;line-height:1.55;">Join the SootyEdge Discord. Real traders working through the same patterns share what's actually working — and you'll be first to know when the next Edge masterclass goes live.</p>
-          <a href="https://discord.gg/wztT2bD9N6" style="display:inline-block;background:#16B5A6;color:#06231f;font-weight:800;font-size:14px;letter-spacing:.4px;padding:12px 22px;border-radius:10px;text-decoration:none;">Join the Discord →</a>
+          <a href="https://discord.gg/Z8K6scxjrZ" style="display:inline-block;background:#16B5A6;color:#06231f;font-weight:800;font-size:14px;letter-spacing:.4px;padding:12px 22px;border-radius:10px;text-decoration:none;">Join the Discord →</a>
         </div>
 
         <p style="margin:0;color:#9FB0B5;font-size:13px;line-height:1.6;">See you inside,<br/><strong style="color:#EAF0F1;">Zi — Founder, SootyEdge</strong></p>
@@ -122,7 +122,7 @@ YOUR FIRST FIX
 ${r.fix}
 
 Want to go deeper?
-Join the SootyEdge Discord: https://discord.gg/wztT2bD9N6
+Join the SootyEdge Discord: https://discord.gg/Z8K6scxjrZ
 
 See you inside,
 Zi — Founder, SootyEdge
