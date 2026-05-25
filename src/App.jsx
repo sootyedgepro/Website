@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import Dex from "./components/Dex.jsx";
-import SubscribeModal from "./components/SubscribeModal.jsx";
 
 
 function ConstellationBG() {
@@ -112,7 +111,7 @@ function DesktopChart(){return(
       height="1014"
       loading="lazy"
       decoding="async"
-      style={{width:"100%",display:"block"}}
+      style={{width:"100%",height:"auto",display:"block",aspectRatio:"1914 / 1014"}}
     />
   </picture>
 )}
@@ -245,7 +244,6 @@ export default function SootyEdge(){
       <FinalCTA/>
       <Disclosure/>
       <Footer/>
-      <SubscribeModal/>
     </>
   )
 }

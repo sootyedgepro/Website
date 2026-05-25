@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#060608" />
+<meta name="theme-color" content="#16242B" />
 <title>The Broken Trader Diagnostic — SootyEdge</title>
 <meta name="description" content="Most traders lose money for one dominant reason — and almost none of them have named it correctly. Take the 90-second diagnostic." />
 
@@ -31,23 +31,21 @@
 
 <style>
   :root{
-    --y:#FFD600; --y-d:#B89400; --y-l:#FFE34D;
-    --g:#03CD00; --r:#FF3333; --r-d:#8A0000;
-    --dk:#060608; --dk2:#0a0a0c;
-    --sf:rgba(18,18,22,.8); --sf2:rgba(28,28,32,.9);
-    --bd:rgba(255,255,255,.08); --bd-y:rgba(255,214,0,.25);
-    --tx:#D8D8E4; --tx-d:#fff;
-    --mt:#A4A4B8; --mt-d:#606078;
+    --bg:#16242B; --bg2:#101b21;
+    --card:#1F333C; --card2:#243942;
+    --teal:#16B5A6; --tealD:#0E6E6B; --tealL:#1FD4C3;
+    --gold:#CFA24E;
+    --ink:#EAF0F1; --ink-d:#fff;
+    --mute:#9FB0B5; --mute-d:#6f8085;
+    --line:#33474F; --line-y:rgba(22,181,166,.3);
+    --coral:#D9695F;
     --R:14px; --R2:18px;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   html,body{height:100%;}
   body{
-    background:
-      radial-gradient(900px 600px at 50% -10%, rgba(255,214,0,.06) 0%, transparent 55%),
-      radial-gradient(1200px 800px at 50% 110%, rgba(255,214,0,.03) 0%, transparent 55%),
-      var(--dk);
-    color:var(--tx);
+    background:radial-gradient(1100px 620px at 50% -8%, #21343d 0%, var(--bg) 46%, var(--bg2) 100%);
+    color:var(--ink);
     font-family:'Crimson Pro', Georgia, serif;
     font-size:17px;line-height:1.65;
     -webkit-font-smoothing:antialiased;
@@ -60,15 +58,15 @@
   /* BRAND */
   .brandline{
     display:flex;align-items:center;gap:10px;margin-bottom:24px;
-    padding-bottom:18px;border-bottom:1px solid var(--bd);
+    padding-bottom:18px;border-bottom:1px solid var(--line);
   }
   .brandline img{width:24px;height:24px;}
   .brand{
     font-family:'Bebas Neue', sans-serif;
-    font-size:18px;letter-spacing:.18em;color:var(--tx-d);
+    font-size:18px;letter-spacing:.18em;color:var(--ink-d);
     line-height:1;
   }
-  .brand .e{color:var(--y);}
+  .brand .e{color:var(--teal);}
 
   /* SCREENS */
   .screen{display:none;animation:fade .4s cubic-bezier(.16,1,.3,1);}
@@ -79,37 +77,37 @@
   .kicker{
     font-family:'JetBrains Mono', monospace;
     font-size:11px;font-weight:500;letter-spacing:.22em;
-    color:var(--y);margin:18px 0 16px;text-transform:uppercase;
+    color:var(--gold);margin:18px 0 16px;text-transform:uppercase;
     display:inline-flex;align-items:center;gap:8px;
   }
   .kicker::before{
     content:"";display:inline-block;width:7px;height:7px;border-radius:50%;
-    background:var(--y);box-shadow:0 0 12px rgba(255,214,0,.6);
+    background:var(--gold);box-shadow:0 0 12px rgba(207,162,78,.5);
   }
   h1{
     font-family:'Bebas Neue', sans-serif;
     font-size:56px;line-height:1;font-weight:400;letter-spacing:.01em;
-    color:var(--tx-d);text-transform:uppercase;
+    color:var(--ink-d);text-transform:uppercase;
   }
-  h1 .hl{color:var(--y);}
+  h1 .hl{color:var(--teal);}
   .sub{
-    color:var(--mt);font-size:17px;line-height:1.6;margin-top:18px;
+    color:var(--mute);font-size:17px;line-height:1.6;margin-top:18px;
     font-weight:300;
   }
   .meta{
     display:inline-flex;align-items:center;gap:10px;margin-top:22px;
     font-family:'JetBrains Mono', monospace;font-size:12px;letter-spacing:.08em;
-    color:var(--tx);background:var(--sf);border:1px solid var(--bd);
+    color:var(--ink);background:var(--card);border:1px solid var(--line);
     border-radius:999px;padding:10px 18px;
   }
-  .meta b{color:var(--y);font-weight:700;}
+  .meta b{color:var(--teal);font-weight:700;}
   .learn{margin-top:26px;display:flex;flex-direction:column;gap:12px;}
   .learn div{
     display:flex;gap:12px;align-items:flex-start;
-    font-size:16px;color:var(--tx);line-height:1.55;
+    font-size:16px;color:var(--ink);line-height:1.55;
   }
   .tick{
-    color:var(--y);font-weight:700;flex:0 0 auto;
+    color:var(--teal);font-weight:700;flex:0 0 auto;
     font-family:'JetBrains Mono', monospace;font-size:14px;
     margin-top:3px;
   }
@@ -117,164 +115,160 @@
   /* BUTTONS */
   .btn{
     display:block;width:100%;border:0;cursor:pointer;
-    background:var(--y);color:#06231f;font-weight:700;
+    background:var(--teal);color:#06231f;font-weight:700;
     font-family:'Bebas Neue', sans-serif;
-    font-size:17px;letter-spacing:.12em;padding:18px;border-radius:12px;
-    margin-top:28px;text-transform:uppercase;
-    transition:transform .12s ease, box-shadow .15s ease, filter .15s ease;
-    box-shadow:0 0 0 1px rgba(255,214,0,.1), 0 10px 30px rgba(255,214,0,.12);
+    font-size:17px;letter-spacing:.12em;padding:18px;border-radius:13px;
+    margin-top:26px;text-transform:uppercase;
+    transition:transform .08s ease, filter .15s ease;
   }
-  .btn:hover{filter:brightness(1.05);box-shadow:0 0 0 1px rgba(255,214,0,.2), 0 15px 40px rgba(255,214,0,.2);}
-  .btn:active{transform:scale(.98);}
+  .btn:hover{filter:brightness(1.07);}
+  .btn:active{transform:scale(.985);}
   .btn[disabled]{opacity:.6;cursor:wait;}
   .btn.ghost{
-    background:transparent;color:var(--mt);font-weight:400;
+    background:transparent;color:var(--mute);font-weight:400;
     font-family:'JetBrains Mono', monospace;
     font-size:12px;letter-spacing:.12em;
     padding:12px;margin-top:14px;box-shadow:none;
   }
-  .btn.ghost:hover{color:var(--y);filter:none;background:transparent;}
+  .btn.ghost:hover{color:var(--teal);filter:none;background:transparent;}
   .disc{
-    margin-top:28px;font-size:12px;color:var(--mt-d);line-height:1.6;
+    margin-top:28px;font-size:12px;color:var(--mute-d);line-height:1.6;
     font-family:'JetBrains Mono', monospace;letter-spacing:.02em;
-    border-top:1px solid var(--bd);padding-top:16px;
+    border-top:1px solid var(--line);padding-top:16px;
   }
 
   /* QUIZ */
   .qtop{
     display:flex;justify-content:space-between;align-items:center;
-    margin:6px 0 14px;font-size:11px;color:var(--mt);font-weight:500;
+    margin:6px 0 14px;font-size:11px;color:var(--mute);font-weight:500;
     font-family:'JetBrains Mono', monospace;letter-spacing:.18em;
     text-transform:uppercase;
   }
-  .qcount b{color:var(--y);font-weight:700;}
+  .qcount b{color:var(--teal);font-weight:700;}
   .bar{
-    height:4px;background:rgba(255,255,255,.05);border-radius:99px;
-    overflow:hidden;margin-bottom:30px;border:1px solid var(--bd);
+    height:6px;background:var(--card);border-radius:99px;
+    overflow:hidden;margin-bottom:26px;
   }
   .fill{
     height:100%;width:0;
-    background:linear-gradient(90deg, var(--y-d), var(--y));
-    border-radius:99px;transition:width .4s cubic-bezier(.16,1,.3,1);
-    box-shadow:0 0 12px rgba(255,214,0,.4);
+    background:linear-gradient(90deg, var(--tealD), var(--teal));
+    border-radius:99px;transition:width .35s ease;
   }
   .qtext{
     font-family:'Bebas Neue', sans-serif;
     font-size:30px;font-weight:400;line-height:1.15;letter-spacing:.01em;
-    color:var(--tx-d);margin-bottom:22px;text-transform:uppercase;
+    color:var(--ink-d);margin-bottom:22px;text-transform:uppercase;
   }
   .opts{display:flex;flex-direction:column;gap:10px;}
   .opt{
     text-align:left;width:100%;cursor:pointer;
     font-family:'Crimson Pro', Georgia, serif;
-    background:var(--sf);border:1px solid var(--bd);color:var(--tx);
+    background:var(--card);border:1px solid var(--line);color:var(--ink);
     border-radius:12px;padding:16px 18px;font-size:16px;line-height:1.45;
     display:flex;gap:14px;align-items:center;
     transition:border-color .14s ease, background .14s ease, transform .08s ease;
   }
-  .opt:hover{border-color:var(--bd-y);background:var(--sf2);}
+  .opt:hover{border-color:var(--line-y);background:var(--card2);}
   .opt:active{transform:scale(.99);}
   .opt.sel{
-    border-color:var(--y);background:rgba(255,214,0,.06);
-    box-shadow:0 0 0 1px rgba(255,214,0,.3), 0 4px 20px rgba(255,214,0,.08);
+    border-color:var(--teal);background:#1c3b3a;
   }
   .dot{
-    width:18px;height:18px;border-radius:50%;border:2px solid var(--mt-d);
+    width:20px;height:20px;border-radius:50%;border:2px solid var(--line);
     flex:0 0 auto;transition:all .14s ease;
   }
-  .opt:hover .dot{border-color:var(--y);}
+  .opt:hover .dot{border-color:var(--teal);}
   .opt.sel .dot{
-    border-color:var(--y);background:var(--y);
-    box-shadow:inset 0 0 0 4px var(--dk);
+    border-color:var(--teal);background:var(--teal);
+    box-shadow:inset 0 0 0 3.5px #1c3b3a;
   }
   .back{
-    margin-top:24px;background:none;border:0;color:var(--mt);
+    margin-top:24px;background:none;border:0;color:var(--mute);
     font-family:'JetBrains Mono', monospace;
     font-size:11px;letter-spacing:.18em;text-transform:uppercase;
     cursor:pointer;padding:6px 2px;transition:color .12s ease;
   }
-  .back:hover{color:var(--y);}
+  .back:hover{color:var(--teal);}
   .back[disabled]{opacity:0;pointer-events:none;}
 
   /* RESULT */
   .rlabel{
     font-family:'JetBrains Mono', monospace;
     font-size:11px;font-weight:500;letter-spacing:.22em;
-    color:var(--y);margin:8px 0 12px;text-transform:uppercase;
+    color:var(--gold);margin:8px 0 12px;text-transform:uppercase;
   }
   .rname{
     font-family:'Bebas Neue', sans-serif;
-    font-size:52px;font-weight:400;line-height:1;color:var(--y);
+    font-size:52px;font-weight:400;line-height:1;color:var(--teal);
     letter-spacing:.01em;text-transform:uppercase;
   }
   .rtag{
-    font-style:italic;color:var(--tx);font-size:18px;
+    font-style:italic;color:var(--ink);font-size:18px;
     margin-top:14px;line-height:1.5;font-weight:300;
   }
   .block{
-    background:var(--sf);border:1px solid var(--bd);
-    border-left:3px solid var(--mt-d);
+    background:var(--card);border:1px solid var(--line);
+    border-left:3px solid var(--mute-d);
     border-radius:12px;padding:18px 20px;margin-top:14px;
   }
-  .block.cost{border-left-color:var(--r);}
+  .block.cost{border-left-color:var(--coral);}
   .block.fix{
-    border-left-color:var(--y);
-    background:linear-gradient(135deg, rgba(255,214,0,.04), var(--sf));
-    box-shadow:0 0 0 1px rgba(255,214,0,.1);
+    border-left-color:var(--teal);
+    background:var(--card2);
   }
   .blabel{
     font-family:'JetBrains Mono', monospace;
     font-size:10.5px;font-weight:500;letter-spacing:.22em;
-    color:var(--mt);margin-bottom:10px;text-transform:uppercase;
+    color:var(--mute);margin-bottom:10px;text-transform:uppercase;
   }
-  .block.cost .blabel{color:var(--r);}
-  .block.fix .blabel{color:var(--y);}
-  .btext{font-size:15.5px;line-height:1.65;color:var(--tx);}
+  .block.cost .blabel{color:var(--coral);}
+  .block.fix .blabel{color:var(--teal);}
+  .btext{font-size:15.5px;line-height:1.65;color:var(--ink);}
 
   /* CTA */
   .cta{
-    background:linear-gradient(160deg, rgba(255,214,0,.06), rgba(18,18,22,.9));
-    border:1px solid var(--bd-y);
+    background:linear-gradient(160deg, #1d3a39, #16282e);
+    border:1px solid var(--tealD);
     border-radius:16px;padding:24px 22px;margin-top:28px;
-    box-shadow:0 20px 50px rgba(0,0,0,.4), 0 0 40px rgba(255,214,0,.06);
+    box-shadow:0 20px 50px rgba(0,0,0,.4), 0 0 40px rgba(22,181,166,.08);
   }
   .cta h3{
     font-family:'Bebas Neue', sans-serif;
     font-size:26px;font-weight:400;line-height:1.15;
-    letter-spacing:.01em;color:var(--tx-d);text-transform:uppercase;
+    letter-spacing:.01em;color:var(--ink-d);text-transform:uppercase;
   }
-  .cta p{color:var(--mt);font-size:14.5px;margin-top:10px;line-height:1.55;}
+  .cta p{color:var(--mute);font-size:14.5px;margin-top:10px;line-height:1.55;}
   .field{margin-top:18px;display:flex;flex-direction:column;gap:12px;}
   .field input{
     width:100%;padding:15px 16px;border-radius:11px;
-    border:1px solid var(--bd);background:rgba(0,0,0,.4);
-    color:var(--tx-d);font-size:15px;
+    border:1px solid var(--line);background:rgba(0,0,0,.4);
+    color:var(--ink-d);font-size:15px;
     font-family:'JetBrains Mono', monospace;
     transition:border-color .14s ease;
   }
-  .field input::placeholder{color:var(--mt-d);}
-  .field input:focus{outline:none;border-color:var(--y);}
-  .field input.err{border-color:var(--r);}
+  .field input::placeholder{color:var(--mute-d);}
+  .field input:focus{outline:none;border-color:var(--teal);}
+  .field input.err{border-color:var(--coral);}
   .err-msg{
-    color:var(--r);font-size:13px;
+    color:var(--coral);font-size:13px;
     font-family:'JetBrains Mono', monospace;
     margin-top:-4px;display:none;
   }
   .err-msg.show{display:block;}
   .sent{
     display:none;margin-top:18px;
-    background:rgba(255,214,0,.06);border:1px solid var(--bd-y);
-    border-radius:12px;padding:18px;font-size:15px;line-height:1.6;color:var(--tx);
+    background:#1c3b3a;border:1px solid var(--teal);
+    border-radius:12px;padding:18px;font-size:15px;line-height:1.6;color:var(--ink);
   }
   .sent b{
-    color:var(--y);font-family:'Bebas Neue', sans-serif;
+    color:var(--teal);font-family:'Bebas Neue', sans-serif;
     font-size:18px;letter-spacing:.06em;display:block;margin-bottom:6px;
     text-transform:uppercase;font-weight:400;
   }
   .footer{
-    margin-top:28px;font-size:12px;color:var(--mt-d);line-height:1.6;
+    margin-top:28px;font-size:12px;color:var(--mute-d);line-height:1.6;
     font-family:'JetBrains Mono', monospace;letter-spacing:.02em;
-    border-top:1px solid var(--bd);padding-top:18px;
+    border-top:1px solid var(--line);padding-top:18px;
   }
 
   @media(max-width:430px){
@@ -300,7 +294,7 @@
     <div class="kicker">FREE 90-SECOND DIAGNOSTIC</div>
     <h1>The Broken Trader <span class="hl">Diagnostic</span></h1>
     <p class="sub">Most traders lose money for one dominant reason — and almost none of them have named it correctly. Answer 12 honest questions and find out which pattern is really costing you.</p>
-    <div class="meta">12 questions <span style="color:var(--mt-d);">·</span> about <b>90 seconds</b></div>
+    <div class="meta">12 questions <span style="color:var(--mute-d);">·</span> about <b>90 seconds</b></div>
     <div class="learn">
       <div><span class="tick">→</span><span>Your single dominant trading flaw — named precisely.</span></div>
       <div><span class="tick">→</span><span>What that pattern is quietly costing you.</span></div>
