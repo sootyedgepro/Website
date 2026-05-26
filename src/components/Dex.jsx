@@ -7,6 +7,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineStyle } from "lightweight-charts";
 import { chatWithDex } from "../lib/dex-api";
+import DexReactiveCore from "./DexReactiveCore.jsx";
+import DexChatComposer from "./DexChatComposer.jsx";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/tooltip.jsx";
+import { WaveLoader } from "./loader.jsx";
+import { motion, AnimatePresence, useMotionValue, useMotionTemplate, useAnimationFrame } from "framer-motion";
 
 const STORAGE_KEY_SESSION = "dex.sessionId";
 const STORAGE_KEY_HISTORY = "dex.history";
@@ -21,10 +26,87 @@ const GRADE_COLORS = {
 };
 
 const SUGGESTED_PROMPTS = [
-  "Grade NVDA on the 1h",
-  "What's the play on TSLA right now?",
-  "Walk me through how you grade a breakout",
-  "I'm watching SOFI, pull the chart",
+  "Grade NVDA (1h)",
+  "Play on TSLA right now",
+  "How you grade a breakout",
+  "Pull up SOFI chart",
+];
+
+// Builds a complete mock TSLA grade message (matches the schema returned by
+// /api/dex/chat) so we can preview the response bubble + chart panel UI
+// without depending on the backend / OAuth. Triggered from the profile
+// popover's "Load demo TSLA grade" button. Safe to delete once OAuth works.
+function buildDemoTSLAResponse() {
+  // Generate ~60 synthetic daily OHLC bars around the $400 zone with a
+  // realistic-feeling drift + range. Random-walk keeps it varied every call.
+  const now = Math.floor(Date.now() / 1000);
+  const dayS = 86400;
+  let price = 372;
+  const bars = [];
+  for (let i = 59; i >= 0; i--) {
+    const t = now - i * dayS;
+    const drift = (Math.random() - 0.46) * 6; // slight upward bias
+    const open = price;
+    const close = +(price + drift).toFixed(2);
+    const high = +(Math.max(open, close) + Math.random() * 4).toFixed(2);
+    const low  = +(Math.min(open, close) - Math.random() * 4).toFixed(2);
+    bars.push({ time: t, open: +open.toFixed(2), high, low, close });
+    price = close;
+  }
+  const last = bars[bars.length - 1].close;
+  return {
+    sessionId: "demo-tsla",
+    content:
+      "Alright — pulling the TSLA tape now. Price is sitting just under the $400 Sell Zone with the Flow Tracker SCORE printing 56 (FIRE, bullish bias). RSI is at 58 and the EMA stack is fanned up, so the trend's intact but we're inside resistance. Here's the play:",
+    grade: {
+      grade: "B",
+      risk_reward: "1:2.3",
+      setup_type: "pullback",
+      regime: "trending",
+      ticker: "TSLA",
+      timeframe: "1d",
+      entry: +(last - 4).toFixed(2),
+      entry_reason:
+        "Pullback into the Retest Above band at " + (last - 4).toFixed(2) + ". Wait for a 1h bullish engulfing or hammer to confirm demand before triggering — entering blind into the band is C-grade behavior.",
+      stop_loss: +(last - 14).toFixed(2),
+      stop_reason:
+        "Sooty Flow Support sits at " + (last - 14).toFixed(2) + " — that's the structural line in the sand. A daily close below it means the trend leg is done, regardless of intraday noise.",
+      tp1: +(last + 9).toFixed(2),
+      tp1_reason:
+        "Strong Resist band at " + (last + 9).toFixed(2) + ". Take 50% off here, move stop to break-even. This is where the prior swing high sits and where Flow Tracker historically stalls on its first test.",
+      tp2: +(last + 22).toFixed(2),
+      tp2_reason:
+        "Measured-move target from the base, lines up with the upper Bollinger at " + (last + 22).toFixed(2) + ". Trim another 30% and let the rest run.",
+      tp3: +(last + 38).toFixed(2),
+      tp3_reason:
+        "Stretch target into the next supply cluster around " + (last + 38).toFixed(2) + ". Trailing stop only — most of the trade's reward is already locked in by TP1+TP2.",
+      why_this_works:
+        "Three confluences stack: (1) Flow Tracker SCORE 56 FIRE with bullish bias means the system is green-lighting longs. (2) Price is pulling INTO the Retest Above band, not breaking through it — historically a high-quality re-entry zone. (3) RSI 58 with MACD still posturing positive on the 1h says momentum hasn't rolled. The grade is B (not A) because price is already within $4 of a known resistance band, which caps the risk-reward.",
+      what_youre_learning:
+        "Confluence > a single signal. Notice how no individual indicator screams 'long' on its own — but stacked together they paint a tradable setup. Try the same exercise on your next chart: list the indicators, score each, and only pull the trigger when 3+ agree.",
+      risk_alert:
+        "1. Daily close below Sooty Flow Support (" + (last - 14).toFixed(2) + ") invalidates the thesis — exit, don't average down. 2. If Flow Tracker SCORE drops below 50 before entry triggers, walk away — the setup is no longer FIRE. 3. Watch the upcoming Wednesday delivery print; an unexpected miss tanks this setup regardless of technicals.",
+      chart: {
+        ticker: "TSLA",
+        timeframe: "1d",
+        bars,
+        quote: { price: last, change: +(last - bars[0].close).toFixed(2) },
+      },
+    },
+  };
+}
+
+// Credit packages — bigger packs come with bonus credits and a lower
+// per-grade cost, encouraging scaled spend. Names lean trader-speak so the
+// purchase feels on-brand. Tweak prices / credit counts as you like — these
+// are placeholder values until Stripe + a real /api/checkout endpoint
+// (Item 9 follow-up) land.
+const PRICE_TIERS = [
+  { name: "Scalp",         price: 5,   credits: 30                                },
+  { name: "Swing",         price: 20,  credits: 150,  badge: "Most popular",
+    featured: true                                                                },
+  { name: "Position",      price: 50,  credits: 425,  badge: "Best value"        },
+  { name: "Institutional", price: 100, credits: 1000                              },
 ];
 
 export default function Dex() {
@@ -34,8 +116,47 @@ export default function Dex() {
   const [sessionId, setSessionId] = useState(null);
   const [email, setEmail] = useState("");
   const [voiceOpen, setVoiceOpen] = useState(false);
+  // Profile popover open/close — driven by the avatar button in the header.
+  const [profileOpen, setProfileOpen] = useState(false);
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
+
+  // `heroState` drives the reactive 3D orb on the welcome screen. We derive
+  // it from inputs Dex already tracks so the orb feels alive without each
+  // upstream change having to know about it.
+  //   sending → "thinking" (waiting on Anthropic)
+  //   input typed → "typing" (user is composing)
+  //   last assistant message arrived in last ~1.8s → "responding"
+  //   otherwise → "idle"
+  const [lastResponseAt, setLastResponseAt] = useState(0);
+  const [tickNow, setTickNow] = useState(0);
+  // Cheap re-render tick so the "responding" window closes naturally.
+  useEffect(() => {
+    if (!lastResponseAt) return;
+    const t = setTimeout(() => setTickNow((n) => n + 1), 1800);
+    return () => clearTimeout(t);
+  }, [lastResponseAt]);
+  const heroState = (() => {
+    if (sending) return "thinking";
+    if (lastResponseAt && Date.now() - lastResponseAt < 1800) return "responding";
+    if (input && input.trim().length > 0) return "typing";
+    return "idle";
+  })();
+  // Suppress lint on tickNow — its only job is to invalidate this closure.
+  void tickNow;
+
+  // Per-character pulse signal. We watch input *length* (not content) so
+  // that pasting a chunk fires once, single keypresses fire once each, and
+  // backspaces / deletions are ignored. The orb listens for pulseSignal
+  // increments and injects a transient amp bump that decays on its own.
+  const prevInputLenRef = useRef(0);
+  const [pulseSignal, setPulseSignal] = useState(0);
+  useEffect(() => {
+    if (input.length > prevInputLenRef.current) {
+      setPulseSignal((s) => s + 1);
+    }
+    prevInputLenRef.current = input.length;
+  }, [input.length]);
 
   // Restore session + history on first mount.
   useEffect(() => {
@@ -106,6 +227,7 @@ export default function Dex() {
         ...m,
         { role: "assistant", content: data.message || "", grade: data.grade || null },
       ]);
+      setLastResponseAt(Date.now());
     } catch (err) {
       setMessages((m) => [
         ...m,
@@ -132,13 +254,63 @@ export default function Dex() {
     }
   }
 
+  // Holds the setTimeout id for an in-flight simulated-processing demo so
+  // we can cancel it if the user resets/closes/triggers another simulation
+  // mid-flight. Otherwise a stale timeout could fire after reset and leave
+  // sending=true hung forever.
+  const simTimeoutRef = useRef(null);
+
   function reset() {
     setMessages([]);
     setSessionId(null);
+    setSending(false);
+    if (simTimeoutRef.current) {
+      clearTimeout(simTimeoutRef.current);
+      simTimeoutRef.current = null;
+    }
     try {
       localStorage.removeItem(STORAGE_KEY_SESSION);
       localStorage.removeItem(STORAGE_KEY_HISTORY);
     } catch {}
+  }
+
+  // Inject a mock TSLA grade straight into the message stream so the bubble
+  // + chart panel can be visually iterated on without OAuth/API. Dev tool.
+  function loadDemo() {
+    const data = buildDemoTSLAResponse();
+    setMessages((m) => [
+      ...m,
+      { role: "user", content: "Play on TSLA right now" },
+      { role: "assistant", content: data.content, grade: data.grade },
+    ]);
+    setLastResponseAt(Date.now());
+    setProfileOpen(false);
+  }
+
+  // Simulate the full send pipeline so processing animations (the Typing
+  // indicator's pulsing wordmark, the composer's Send-button spinner, the
+  // disabled-input state) can be tested without hitting the backend. Adds
+  // a user message, flips sending=true for ~4 seconds, then drops in the
+  // same mock TSLA grade.
+  function simulateProcessing() {
+    // Cancel any prior sim in-flight.
+    if (simTimeoutRef.current) clearTimeout(simTimeoutRef.current);
+    setMessages((m) => [
+      ...m,
+      { role: "user", content: "Play on TSLA right now" },
+    ]);
+    setSending(true);
+    setProfileOpen(false);
+    simTimeoutRef.current = setTimeout(() => {
+      const data = buildDemoTSLAResponse();
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: data.content, grade: data.grade },
+      ]);
+      setSending(false);
+      setLastResponseAt(Date.now());
+      simTimeoutRef.current = null;
+    }, 4000);
   }
 
   function saveEmail(v) {
@@ -153,31 +325,45 @@ export default function Dex() {
   const empty = messages.length === 0;
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="dx-app">
       <style>{DEX_CSS}</style>
+      <DexGridBG />
 
       <header className="dx-top">
-        <div className="dx-top-brand">
-          <DexGlyph small />
-          <span className="dx-top-wm">Dex</span>
-        </div>
+        <a href="/dex" className="dx-top-brand" aria-label="SootyDex home">
+          {/* Just the wordmark — symbol icon is dropped per design direction.
+            * Swap to the Light variant when we add a light-mode toggle. */}
+          <img src="/SD-WordM-Dark.svg" alt="SootyDex" className="dx-top-wm-img" />
+        </a>
         <div className="dx-top-meta">
-          <span className="dx-online">
-            <span className="dx-online-dot" />
-            online
-          </span>
           {messages.length > 0 && (
             <button type="button" className="dx-top-btn" onClick={reset} title="New conversation">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
               New chat
             </button>
           )}
-          <a href="/" className="dx-top-side">By SootyEdge</a>
+          {/* Profile avatar trigger. Click will open the Profile popup once
+           * the popup component is wired in (Item 8). For now it's a styled
+           * button placeholder so the header treatment lands. */}
+          <button
+            type="button"
+            className={`dx-top-avatar${profileOpen ? " is-open" : ""}`}
+            aria-label="Open profile"
+            aria-expanded={profileOpen}
+            title="Profile"
+            onClick={() => setProfileOpen((o) => !o)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </button>
         </div>
       </header>
 
       {empty ? (
-        <Welcome onPick={(p) => send(p)} email={email} onEmail={saveEmail} />
+        <Welcome heroState={heroState} pulseSignal={pulseSignal} />
       ) : (
         <main className="dx-stream" ref={scrollRef}>
           <div className="dx-stream-in">
@@ -190,44 +376,25 @@ export default function Dex() {
       )}
 
       <footer className="dx-foot">
-        <div className="dx-input-wrap">
-          <textarea
-            ref={textareaRef}
-            className="dx-textarea"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              sending
-                ? "Dex is reading the chart…"
-                : empty
-                ? "Drop a ticker, paste a setup, or ask anything…"
-                : "Ask a follow-up, or try another ticker…"
-            }
-            rows={1}
-            disabled={sending}
-            maxLength={2000}
-          />
-          <button
-            type="button"
-            className="dx-mic"
-            onClick={() => setVoiceOpen(true)}
-            disabled={sending}
-            aria-label="Voice mode"
-            title="Voice mode"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-          </button>
-          <button
-            type="button"
-            className="dx-send"
-            onClick={() => send()}
-            disabled={!input.trim() || sending}
-            aria-label="Send"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
-        </div>
+        <DexChatComposer
+          value={input}
+          onChange={setInput}
+          onSubmit={() => send()}
+          placeholder={
+            sending
+              ? "Dex is reading the chart…"
+              : empty
+              ? "Drop a ticker, paste a setup, or ask anything…"
+              : "Ask a follow-up, or try another ticker…"
+          }
+          disabled={sending}
+          loading={sending}
+          onVoice={() => setVoiceOpen(true)}
+          // Show the pill prompts only on the empty/welcome screen, not in
+          // the middle of an ongoing conversation. Click → submit immediately.
+          suggestions={empty ? SUGGESTED_PROMPTS : []}
+          onSuggestion={(s) => send(s)}
+        />
         <div className="dx-foot-hint">
           Educational analysis · Not investment advice · Trade your own risk · <span className="dx-beta">Beta</span>
         </div>
@@ -251,51 +418,403 @@ export default function Dex() {
           onClose={() => setVoiceOpen(false)}
         />
       )}
+
+      {/* Profile popover. Lives at the root so it can position fixed to the
+       * viewport and overlay everything else. Wrapped in AnimatePresence so
+       * the open/close anims actually play. */}
+      <AnimatePresence>
+        {profileOpen && (
+          <ProfilePopover
+            email={email}
+            onEmail={saveEmail}
+            onClose={() => setProfileOpen(false)}
+            onClearHistory={() => {
+              reset();
+              setProfileOpen(false);
+            }}
+            onLoadDemo={loadDemo}
+            onSimulate={simulateProcessing}
+            messageCount={messages.length}
+          />
+        )}
+      </AnimatePresence>
     </div>
+    </TooltipProvider>
   );
 }
 
 // ──────────────────────────────────────────────────────────────────────────
 
-function Welcome({ onPick, email, onEmail }) {
+// Profile popover. A small floating panel anchored to the avatar in the
+// header. Holds the email field (moved out of the welcome screen) and a
+// "clear chat" action. Click backdrop or press Escape to dismiss.
+//
+// This is a placeholder for the full Profile design in Rawki/profile.tsx —
+// that one needs `card`, `avatar`, `progress` shadcn components plus a
+// modern lucide-react before it can render. This minimal version covers the
+// functional gap so the avatar button is actually useful today.
+function ProfilePopover({ email, onEmail, onClose, onClearHistory, onLoadDemo, onSimulate, messageCount }) {
+  // Escape dismisses.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <main className="dx-welcome">
-      <div className="dx-welcome-in">
-        <div className="dx-welcome-eyebrow">
-          <span className="dx-welcome-tag">TradeGrader</span>
-          <span className="dx-welcome-sep" />
-          <span className="dx-welcome-tag-dim">AI Trading Mentor</span>
+    <>
+      {/* Transparent backdrop catches outside-click. */}
+      <motion.div
+        className="dx-profile-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="dx-profile-pop"
+        initial={{ opacity: 0, y: -10, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -10, scale: 0.96 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        role="dialog"
+        aria-label="Profile"
+      >
+        <div className="dx-profile-head">
+          <div className="dx-profile-ring" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <div className="dx-profile-meta">
+            <div className="dx-profile-name">{email ? email.split("@")[0] : "Guest trader"}</div>
+            <div className="dx-profile-sub">{email || "Add an email to save your history"}</div>
+          </div>
         </div>
-        <div className="dx-welcome-avatar">
-          <DexCore />
-        </div>
-        <h1 className="dx-welcome-h1">Hey, I'm Dex.</h1>
-        <p className="dx-welcome-sub">
-          Your AI Trading Mentor. Drop a ticker, paste a setup, or ask anything.
-          I pull live data, run the technicals, and grade the play <em>A through F</em>.
-        </p>
-        <div className="dx-chips">
-          {SUGGESTED_PROMPTS.map((p, i) => (
-            <button key={i} type="button" className="dx-chip" onClick={() => onPick(p)}>
-              {p}
-            </button>
-          ))}
-        </div>
-        <div className="dx-welcome-email">
+
+        <div className="dx-profile-row">
+          <label className="dx-profile-label" htmlFor="dx-profile-email">Email</label>
           <input
+            id="dx-profile-email"
             type="email"
-            className="dx-welcome-email-input"
-            placeholder="email (optional, saves your grades & history)"
-            defaultValue={email}
+            className="dx-profile-input"
+            placeholder="you@example.com"
+            defaultValue={email || ""}
             onBlur={(e) => onEmail(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                onEmail(e.target.value);
+                onEmail(e.currentTarget.value);
               }
             }}
           />
+          <div className="dx-profile-hint">
+            Saves your grades and chat history across sessions.
+          </div>
         </div>
+
+        <div className="dx-profile-stats">
+          <div className="dx-profile-stat">
+            <div className="dx-profile-stat-n">{messageCount}</div>
+            <div className="dx-profile-stat-l">Messages</div>
+          </div>
+          <div className="dx-profile-stat">
+            <div className="dx-profile-stat-n">Beta</div>
+            <div className="dx-profile-stat-l">Plan</div>
+          </div>
+        </div>
+
+        {/* Credit packages — Item 9's pricing lives here. Clicking a tier
+         * currently logs; wire to /api/checkout (Stripe) when ready. */}
+        <div className="dx-profile-section">
+          <div className="dx-profile-section-title">
+            <span>Get more credits</span>
+            <span className="dx-profile-section-sub">per grade gets cheaper at scale</span>
+          </div>
+          <div className="dx-profile-tiers">
+            {PRICE_TIERS.map((t) => (
+              <button
+                key={t.name}
+                type="button"
+                className={`dx-profile-tier${t.featured ? " is-featured" : ""}`}
+                onClick={() => {
+                  // TODO: hook to Stripe checkout. For now, log so we can
+                  // verify the click path.
+                  console.log("[dex] tier select", t.name, `$${t.price}`);
+                }}
+              >
+                <div className="dx-tier-row">
+                  <span className="dx-tier-name">{t.name}</span>
+                  {t.badge && <span className="dx-tier-badge">{t.badge}</span>}
+                </div>
+                <div className="dx-tier-row dx-tier-row-end">
+                  <span className="dx-tier-credits">{t.credits} grades</span>
+                  <span className="dx-tier-price">${t.price}</span>
+                </div>
+                <div className="dx-tier-perunit">
+                  ${(t.price / t.credits).toFixed(2)} per grade
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="dx-profile-actions">
+          {/* Dev tools. Remove this whole block once real backend chat
+           * (OAuth or API key) is verified. */}
+          {onSimulate && (
+            <button
+              type="button"
+              className="dx-profile-btn dx-profile-btn-secondary"
+              onClick={onSimulate}
+              title="Add a user message, hold sending=true for 4s (Typing indicator), then drop a mock grade"
+            >
+              Simulate processing (4s)
+            </button>
+          )}
+          {onLoadDemo && (
+            <button
+              type="button"
+              className="dx-profile-btn dx-profile-btn-secondary"
+              onClick={onLoadDemo}
+              title="Inject a mock TSLA grade instantly (skips processing)"
+            >
+              Load demo TSLA grade
+            </button>
+          )}
+          <button
+            type="button"
+            className="dx-profile-btn"
+            onClick={onClearHistory}
+            disabled={messageCount === 0}
+            title={messageCount === 0 ? "Nothing to clear" : "Clear conversation history"}
+          >
+            Clear chat history
+          </button>
+        </div>
+
+        <div className="dx-profile-foot">
+          Billing &amp; history dashboard — coming soon.
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+
+// Scrolling grid behind the whole Dex view, adapted from the-infinite-grid.jsx
+// into a background-only layer. Two layers: a dim base grid that's always
+// visible, and a brighter grid revealed only where the cursor is (via a
+// CSS radial-gradient mask). Both share the same scrolling pattern offset.
+//
+// Motion values drive the offset + cursor position directly so there's no
+// per-frame React re-render — the SVG attributes and CSS mask read from
+// MotionValues at the DOM level.
+function DexGridBG() {
+  // Scrolling offset (loops at 44px to match the pattern tile size).
+  const ox = useMotionValue(0);
+  const oy = useMotionValue(0);
+  useAnimationFrame(() => {
+    ox.set((ox.get() + 0.2) % 44);
+    oy.set((oy.get() + 0.2) % 44);
+  });
+
+  // Cursor coords in viewport space. Initialized off-screen so the bright
+  // grid isn't revealed in the corner before the user moves the mouse.
+  const mx = useMotionValue(-9999);
+  const my = useMotionValue(-9999);
+  useEffect(() => {
+    const onMove = (e) => {
+      mx.set(e.clientX);
+      my.set(e.clientY);
+    };
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, [mx, my]);
+  const mask = useMotionTemplate`radial-gradient(360px circle at ${mx}px ${my}px, black 0%, black 30%, transparent 75%)`;
+
+  // Tiny helper so the two layers share the same scrolling pattern without
+  // re-implementing the SVG twice. The stroke + opacity come in via props so
+  // the two layers can read at different intensities (dim vs bright).
+  const Grid = ({ id, stroke }) => (
+    <svg width="100%" height="100%">
+      <defs>
+        <motion.pattern
+          id={id}
+          width="44"
+          height="44"
+          patternUnits="userSpaceOnUse"
+          x={ox}
+          y={oy}
+        >
+          <path d="M 44 0 L 0 0 0 44" fill="none" stroke={stroke} strokeWidth="1" />
+        </motion.pattern>
+      </defs>
+      <rect width="100%" height="100%" fill={`url(#${id})`} />
+    </svg>
+  );
+
+  return (
+    <>
+      {/* Dim baseline — always faintly visible across the whole viewport. */}
+      <div className="dx-grid-bg dx-grid-bg-dim" aria-hidden="true">
+        <Grid id="dx-grid-pattern-dim" stroke="rgba(255,214,0,0.05)" />
+      </div>
+      {/* Bright reveal — only the area around the cursor brightens, courtesy
+       * of the CSS mask-image radial gradient. */}
+      <motion.div
+        className="dx-grid-bg dx-grid-bg-bright"
+        aria-hidden="true"
+        style={{ maskImage: mask, WebkitMaskImage: mask }}
+      >
+        <Grid id="dx-grid-pattern-bright" stroke="rgba(255,214,0,0.32)" />
+      </motion.div>
+    </>
+  );
+}
+
+// Tiny typewriter: renders `text` one character at a time, calls onDone when
+// it lands on the final character. While it's still typing it renders a
+// blinking caret after the visible substring. Plain text only (no JSX content
+// — keep markup outside).
+function Typewriter({ text, speed = 28, onDone, active = true }) {
+  const [shown, setShown] = useState("");
+  const doneRef = useRef(false);
+  useEffect(() => {
+    if (!active) return;
+    setShown("");
+    doneRef.current = false;
+    let i = 0;
+    let timer;
+    const step = () => {
+      i += 1;
+      setShown(text.slice(0, i));
+      if (i >= text.length) {
+        if (!doneRef.current) {
+          doneRef.current = true;
+          if (onDone) onDone();
+        }
+        return;
+      }
+      timer = setTimeout(step, speed);
+    };
+    timer = setTimeout(step, speed);
+    return () => clearTimeout(timer);
+  }, [text, speed, active]);
+  return (
+    <>
+      {shown}
+      {!doneRef.current && <span className="dx-caret" />}
+    </>
+  );
+}
+
+function Welcome({ heroState = "idle", pulseSignal = 0 }) {
+  // Welcome reads like Dex actually speaking: each line types out character
+  // by character, with a blinking caret on the active line. While he's
+  // "talking" the orb is forced into its "responding" state so it pulses in
+  // sync with the words. Once all three lines have landed, the block sits
+  // for ~6s then fades away — orb, pills, composer take over.
+  // (Email collection moved to the Profile popup — Item 8.)
+  const [stage, setStage] = useState(0); // 0=h1, 1=sub1, 2=sub2, 3=all done
+  const [textVisible, setTextVisible] = useState(true);
+  const isTyping = stage < 3;
+  // Override the parent's heroState while Dex is mid-sentence.
+  const effectiveHeroState = isTyping ? "responding" : heroState;
+
+  // Once the last line finishes typing, give it a beat then fade out.
+  useEffect(() => {
+    if (stage < 3) return;
+    const t = setTimeout(() => setTextVisible(false), 6000);
+    return () => clearTimeout(t);
+  }, [stage]);
+
+  return (
+    <main className="dx-welcome">
+      <div className="dx-welcome-in">
+        <motion.div
+          className="dx-welcome-eyebrow"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+        >
+          <span className="dx-welcome-tag">TradeGrader</span>
+          <span className="dx-welcome-sep" />
+          <span className="dx-welcome-tag-dim">AI Trading Mentor</span>
+        </motion.div>
+
+        <motion.div
+          className="dx-welcome-avatar"
+          initial={{ opacity: 0, scale: 0.88 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+        >
+          <DexReactiveCore state={effectiveHeroState} size={280} pulseSignal={pulseSignal} />
+        </motion.div>
+
+        {/* Greeting block: each line types in sequence. The whole block sits
+         * inside AnimatePresence so the auto-fade exits gracefully. */}
+        <AnimatePresence>
+          {textVisible && (
+            <motion.div
+              key="dx-greeting"
+              className="dx-welcome-greeting"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -10, transition: { duration: 0.7, ease: "easeIn" } }}
+              transition={{ duration: 0.35 }}
+            >
+              {/* Line 1 — types first. */}
+              <h1 className="dx-welcome-h1">
+                {stage >= 0 && (
+                  <Typewriter
+                    text="Hey — I'm Dex."
+                    speed={55}
+                    onDone={() => setStage((s) => Math.max(s, 1))}
+                    active={stage >= 0}
+                  />
+                )}
+              </h1>
+
+              {/* Line 2 — kicks off once line 1 finishes. */}
+              <p className="dx-welcome-sub">
+                {stage >= 1 ? (
+                  <Typewriter
+                    text="Your AI trading mentor."
+                    speed={32}
+                    onDone={() => setStage((s) => Math.max(s, 2))}
+                    active={stage >= 1}
+                  />
+                ) : (
+                  // Empty placeholder keeps vertical rhythm before line 2 starts.
+                  <span style={{ opacity: 0 }}>placeholder</span>
+                )}
+              </p>
+
+              {/* Line 3 — kicks off once line 2 finishes. The "A through F"
+               * is styled as the static em after the typewriter completes
+               * its plain-text portion. */}
+              <p className="dx-welcome-sub">
+                {stage >= 2 ? (
+                  <Typewriter
+                    text="Drop a ticker, paste a setup, or just ask. I'll pull the data, run the technicals, and grade the play A through F."
+                    speed={22}
+                    onDone={() => setStage((s) => Math.max(s, 3))}
+                    active={stage >= 2}
+                  />
+                ) : (
+                  <span style={{ opacity: 0 }}>placeholder</span>
+                )}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Suggestion pills live in the composer (DexChatComposer.jsx).
+         * Email collection lives in the Profile popup (Item 8). */}
       </div>
     </main>
   );
@@ -303,9 +822,23 @@ function Welcome({ onPick, email, onEmail }) {
 
 function Bubble({ msg }) {
   // Graded message gets the full trade-terminal panel (breaks out of the
-  // narrow chat column). Otherwise, normal bubble.
+  // narrow chat column). We still wrap it in the same bubble-row shell as
+  // text replies so the wordmark "Dex" label appears above — without that,
+  // a grade just lands in the stream with no identifier and reads as a
+  // disconnected block ("cuts off").
   if (msg.role === "assistant" && msg.grade) {
-    return <TradePanel grade={msg.grade} text={msg.content} />;
+    // Graded responses get their own full-width row OUTSIDE the .dx-bub-col
+    // 620px constraint. Wordmark label sits above the panel so the message
+    // is still identified as Dex, but the panel itself reads as a hub /
+    // dashboard rather than a chat bubble.
+    return (
+      <div className="dx-grade-row">
+        <div className="dx-grade-label">
+          <img src="/SD-WordM-Dark.svg" alt="Dex" className="dx-bub-wm" />
+        </div>
+        <TradePanel grade={msg.grade} text={msg.content} />
+      </div>
+    );
   }
 
   const isUser = msg.role === "user";
@@ -313,7 +846,10 @@ function Bubble({ msg }) {
     <div className={`dx-bub-row ${isUser ? "is-user" : "is-bot"}${msg.isError ? " is-error" : ""}`}>
       {!isUser && (
         <div className="dx-bub-avatar">
-          <DexGlyph small />
+          {/* Wordmark used as the response identifier per design direction —
+           * reads as "Dex:" rather than a bare icon. Sized horizontally so
+           * the chat row stays tight. */}
+          <img src="/SD-WordM-Dark.svg" alt="Dex" className="dx-bub-wm" />
         </div>
       )}
       <div className="dx-bub-col">
@@ -622,8 +1158,8 @@ function TradePanel({ grade, text }) {
       <div className="dx-tp-main">
         <aside className="dx-tp-left">
           <div className="dx-tp-section-label">
-            <DexGlyph small />
-            <span>Dex's breakdown</span>
+            <img src="/SD-WordM-Dark.svg" alt="Dex" className="dx-bub-wm" />
+            <span>'s breakdown</span>
           </div>
           <div className="dx-tp-narrative">
             <Text text={narrative} />
@@ -641,26 +1177,16 @@ function TradePanel({ grade, text }) {
             )}
           </div>
           <div className="dx-tp-strip">
-            <LevelChip label="Entry" price={grade.entry} color="#FFD600" />
-            <LevelChip label="Stop" price={grade.stop_loss} color="#FF3333" />
-            <LevelChip label="TP1" price={grade.tp1} color="#03CD00" />
-            <LevelChip label="TP2" price={grade.tp2} color="#03CD00" />
-            <LevelChip label="TP3" price={grade.tp3} color="#03CD00" />
+            <LevelChip label="Entry" price={grade.entry} color="#FFD600" reason={grade.entry_reason} />
+            <LevelChip label="Stop" price={grade.stop_loss} color="#FF3333" reason={grade.stop_reason} />
+            <LevelChip label="TP1" price={grade.tp1} color="#03CD00" reason={grade.tp1_reason} />
+            <LevelChip label="TP2" price={grade.tp2} color="#03CD00" reason={grade.tp2_reason} />
+            <LevelChip label="TP3" price={grade.tp3} color="#03CD00" reason={grade.tp3_reason} />
           </div>
         </section>
       </div>
 
       <div className="dx-tp-bottom">
-        <div className="dx-card-section" style={{ paddingTop: 0 }}>
-          <div className="dx-card-section-label">Trade plan</div>
-          <div className="dx-card-lvls">
-            <LvlRow label="Entry" price={grade.entry} reason={grade.entry_reason} color="#FFD600" />
-            <LvlRow label="Stop" price={grade.stop_loss} reason={grade.stop_reason} color="#FF3333" />
-            <LvlRow label="TP1" price={grade.tp1} reason={grade.tp1_reason} color="#03CD00" />
-            <LvlRow label="TP2" price={grade.tp2} reason={grade.tp2_reason} color="#03CD00" />
-            <LvlRow label="TP3" price={grade.tp3} reason={grade.tp3_reason} color="#03CD00" />
-          </div>
-        </div>
         <div className="dx-card-insights">
           {grade.why_this_works && (
             <Insight title="Why this works" body={grade.why_this_works} color="#FFD600" />
@@ -684,68 +1210,46 @@ function TradePanel({ grade, text }) {
   );
 }
 
+// Modernized grade badge. Was a scalloped circular "seal" with gold gradient
+// disc — read as a notarized stamp, didn't match the new flat-gray + bright-
+// border dashboard. Now: solid dark tile, crisp 2px border in the grade
+// color, big letter in the same color, tiny "Grade" eyebrow above. Lives
+// in the same visual family as the .dx-card-stat / .dx-tp-chip tiles.
 function GradeBadge({ letter, color, size = 80 }) {
-  // Circular grading stamp: scalloped outer ring + gold-gradient inner disc +
-  // letter centered. Replaces the square pill so the grade reads as a real
-  // graded "seal" instead of a CSS button.
-  const teeth = 18;
-  const points = useMemo(() => {
-    const out = [];
-    const outerR = 48;
-    const innerR = 45;
-    for (let i = 0; i < teeth * 2; i++) {
-      const a = (i / (teeth * 2)) * Math.PI * 2 - Math.PI / 2;
-      const r = i % 2 === 0 ? outerR : innerR;
-      out.push(`${(50 + r * Math.cos(a)).toFixed(2)},${(50 + r * Math.sin(a)).toFixed(2)}`);
-    }
-    return out.join(" ");
-  }, [teeth]);
-
   return (
-    <svg
-      viewBox="0 0 100 100"
-      width={size}
-      height={size}
-      className="dx-tp-badge"
+    <div
+      className="dx-grade-badge dx-tp-badge"
+      style={{ "--gc": color, width: size, height: size }}
       aria-label={`Grade ${letter}`}
     >
-      <polygon points={points} fill={color} opacity="0.55" />
-      <circle cx="50" cy="50" r="40" fill={color} />
-      <circle
-        cx="50" cy="50" r="40"
-        fill="none"
-        stroke="rgba(0, 0, 0, 0.55)"
-        strokeWidth="1.5"
-      />
-      <circle
-        cx="50" cy="50" r="35"
-        fill="none"
-        stroke="rgba(0, 0, 0, 0.32)"
-        strokeWidth="0.5"
-        strokeDasharray="2 2.4"
-      />
-      <text
-        x="50"
-        y="67"
-        textAnchor="middle"
-        fontFamily="Bebas Neue, Impact, sans-serif"
-        fontSize="50"
-        fill="#14151c"
-        style={{ fontWeight: 700, letterSpacing: 0 }}
-      >
-        {letter}
-      </text>
-    </svg>
+      <span className="dx-grade-eyebrow">Grade</span>
+      <span className="dx-grade-letter">{letter}</span>
+      {/* Accent bar at the bottom — matches the level chips' 2px colored
+        * border feel and gives the tile a directional weight. */}
+      <span className="dx-grade-bar" />
+    </div>
   );
 }
 
-function LevelChip({ label, price, color }) {
+function LevelChip({ label, price, color, reason }) {
   if (price == null) return null;
-  return (
-    <div className="dx-tp-chip" style={{ "--cc": color }}>
+  const chip = (
+    <div className="dx-tp-chip" style={{ "--cc": color, cursor: reason ? "help" : "default" }}>
       <span className="dx-tp-chip-l">{label}</span>
       <span className="dx-tp-chip-v">${price}</span>
     </div>
+  );
+  if (!reason) return chip;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{chip}</TooltipTrigger>
+      {/* className overrides shadcn's default Tailwind theme classes which
+        * weren't resolving on this page (bg-popover was rendering invisible).
+        * dx-tooltip is a plain CSS class defined in DEX_CSS. */}
+      <TooltipContent side="top" sideOffset={8} className="dx-tooltip">
+        {reason}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -793,12 +1297,10 @@ function Typing() {
   return (
     <div className="dx-bub-row is-bot dx-typing-row">
       <div className="dx-bub-avatar">
-        <DexGlyph small pulsing />
+        <img src="/SD-WordM-Dark.svg" alt="Dex" className="dx-bub-wm is-pulsing" />
       </div>
-      <div className="dx-bub dx-typing">
-        <span />
-        <span />
-        <span />
+      <div className="dx-bub dx-typing" style={{ "--primary": "#FFD600" }}>
+        <WaveLoader size="lg" />
       </div>
     </div>
   );
@@ -1194,36 +1696,23 @@ function DexCore() {
   );
 }
 
+// Dex's icon glyph — now backed by the user's branded SD-Dark SVG instead
+// of the placeholder yellow circle. Used in the bubble avatars and voice
+// mode. The header uses the asset directly (see .dx-top-icon) since it
+// also renders the wordmark next to it.
 function DexGlyph({ small, large, pulsing }) {
   const size = large ? 96 : small ? 28 : 56;
-  const id = large ? "l" : small ? "s" : "m";
   return (
     <span
       className={`dx-glyph ${pulsing ? "is-pulsing" : ""}`}
       style={{ width: size, height: size }}
     >
-      <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true">
-        <defs>
-          <radialGradient id={`dx-grad-${id}`} cx="50%" cy="38%" r="62%">
-            <stop offset="0%" stopColor="#FFE36B" />
-            <stop offset="55%" stopColor="#FFD600" />
-            <stop offset="100%" stopColor="#6e5800" />
-          </radialGradient>
-        </defs>
-        <circle cx="32" cy="32" r="28" fill={`url(#dx-grad-${id})`} />
-        <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="1" />
-        <text
-          x="50%"
-          y="58%"
-          textAnchor="middle"
-          fontFamily="Bebas Neue, Impact, sans-serif"
-          fontSize={large ? 56 : small ? 22 : 38}
-          fill="#14151c"
-          letterSpacing="1"
-        >
-          D
-        </text>
-      </svg>
+      <img
+        src="/SD-Dark.svg"
+        alt=""
+        aria-hidden="true"
+        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+      />
     </span>
   );
 }
@@ -1238,7 +1727,12 @@ const DEX_CSS = `
   flex-direction: column;
   background: radial-gradient(ellipse at top, #15161e 0%, #0a0b11 70%);
   color: #e3e6ee;
-  font-family: "Crimson Pro", "Segoe UI", system-ui, sans-serif;
+  /* Single font across all of Dex. The user installed Oxanium Variable via
+   * @fontsource-variable/oxanium and made it the project's --font-sans in
+   * src/index.css; we override the legacy multi-font stack here and let
+   * descendants inherit. */
+  font-family: 'Oxanium Variable', 'Oxanium', system-ui, sans-serif;
+  font-weight: 500;
   overflow: hidden;
   z-index: 100000;
 }
@@ -1252,6 +1746,30 @@ const DEX_CSS = `
     radial-gradient(circle at 18% 12%, rgba(255, 214, 0, 0.06), transparent 35%),
     radial-gradient(circle at 88% 90%, rgba(0, 212, 212, 0.04), transparent 38%);
   pointer-events: none;
+}
+
+/* Infinite scrolling grid backdrop (Task 6) — sits behind all chat content */
+/* Shared positioning for both grid layers. */
+.dx-grid-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.dx-grid-bg svg { width: 100%; height: 100%; display: block; }
+/* Dim baseline — masked with a static center radial so the grid fades out
+ * near the edges of the viewport (subtle vignette feel). */
+.dx-grid-bg-dim {
+  opacity: 0.55;
+  mask-image: radial-gradient(ellipse at 50% 40%, #000 35%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 35%, transparent 80%);
+}
+/* Bright reveal layer — mask is driven inline by JS via useMotionTemplate
+ * (cursor-tracking radial gradient). Higher base opacity so the area around
+ * the cursor reads as actually brighter than the dim grid. */
+.dx-grid-bg-bright {
+  opacity: 0.85;
+  z-index: 1;
 }
 
 .dx-glyph {
@@ -1275,9 +1793,10 @@ const DEX_CSS = `
   align-items: center;
   justify-content: space-between;
   padding: 14px 24px;
-  border-bottom: 1px solid rgba(255, 214, 0, 0.08);
-  background: rgba(8, 9, 14, 0.6);
-  backdrop-filter: blur(10px);
+  /* Same treatment as the footer: fully transparent wrapper so the page
+   * background (and eventually the infinite-grid backdrop) shows through.
+   * The DEX logo and the avatar button carry any visual weight themselves. */
+  background: transparent;
   z-index: 5;
 }
 .dx-top-brand {
@@ -1288,16 +1807,87 @@ const DEX_CSS = `
   color: inherit;
 }
 .dx-top-wm {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   letter-spacing: 0.22em;
   font-size: 19px;
   color: #FFD600;
+}
+/* SD logo + wordmark in the top-left. Heights tuned so the wordmark visually
+ * matches the icon's optical size without making the header taller. */
+.dx-top-icon {
+  height: 26px;
+  width: auto;
+  display: block;
+}
+.dx-top-wm-img {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+/* Bubble-row identifier — uses the same wordmark for visual consistency
+ * with the header. Sized so it reads like a small "Dex:" label next to
+ * the response, not a giant logo. */
+.dx-bub-wm {
+  height: 14px;
+  width: auto;
+  display: block;
+  opacity: 0.85;
+}
+.dx-bub-wm.is-pulsing {
+  animation: dx-wm-pulse 1.4s ease-in-out infinite;
+}
+@keyframes dx-wm-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.04); }
+}
+
+/* Graded response row — full width of the stream container (.dx-stream-in
+ * already provides max-width 1280px and centers). Wordmark label sits above
+ * the panel so the message is still identified as Dex, without forcing the
+ * panel into the narrow .dx-bub-col chat-bubble column. */
+.dx-grade-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.dx-grade-label {
+  padding-left: 4px;
+  display: flex;
+  align-items: center;
+}
+
+/* Dex tooltip — used for the per-level chip explanations. Plain CSS
+ * (not Tailwind) so it doesn't depend on shadcn's dark-mode token
+ * activation, which wasn't applying on this page. */
+.dx-tooltip {
+  max-width: 280px;
+  padding: 12px 14px;
+  background: rgba(14, 16, 22, 0.97);
+  border: 1px solid rgba(255, 214, 0, 0.28);
+  border-radius: 10px;
+  color: #d9dde8;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 214, 0, 0.05);
+  /* Must beat .dx-app's z-index of 100000 — Radix Portal renders this as a
+   * sibling of .dx-app at the document.body level, so a lower z-index gets
+   * covered by the entire Dex app shell. */
+  z-index: 100001;
+  pointer-events: none;
+}
+/* Anchor-tagged brand still uses the same brand layout as before. */
+.dx-top-brand:hover .dx-top-icon,
+.dx-top-brand:hover .dx-top-wm-img {
+  filter: drop-shadow(0 0 8px rgba(255, 214, 0, 0.35));
 }
 .dx-top-meta {
   display: flex;
   align-items: center;
   gap: 14px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 11px;
   color: #8b90a8;
   letter-spacing: 0.06em;
@@ -1325,7 +1915,7 @@ const DEX_CSS = `
   color: #c0c4d2;
   padding: 6px 10px;
   border-radius: 8px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.06em;
   cursor: pointer;
@@ -1345,13 +1935,301 @@ const DEX_CSS = `
 }
 .dx-top-side:hover { color: #FFD600; }
 
+/* Profile avatar button — replaces the legacy "online | By SootyEdge"
+ * pair. Just a circular icon button with a soft hover that mirrors the
+ * composer's tool buttons. Hooks up to the Profile popup when item 8 lands. */
+.dx-top-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c0c4d2;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.dx-top-avatar:hover {
+  color: #FFD600;
+  border-color: rgba(255, 214, 0, 0.45);
+  background: rgba(255, 214, 0, 0.08);
+  transform: translateY(-1px);
+}
+.dx-top-avatar:active { transform: translateY(0); }
+.dx-top-avatar.is-open {
+  color: #FFD600;
+  border-color: rgba(255, 214, 0, 0.55);
+  background: rgba(255, 214, 0, 0.12);
+}
+
+/* Profile popover — anchored top-right under the avatar button. */
+.dx-profile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: transparent; /* invisible — just catches clicks-outside */
+}
+.dx-profile-pop {
+  position: fixed;
+  top: 64px;
+  right: 18px;
+  z-index: 9001;
+  width: min(340px, calc(100vw - 36px));
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(14, 15, 22, 0.92);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid rgba(255, 214, 0, 0.18);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 214, 0, 0.05);
+  color: #d9dde8;
+}
+.dx-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.dx-profile-ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 214, 0, 0.28), rgba(255, 214, 0, 0.05));
+  border: 1px solid rgba(255, 214, 0, 0.35);
+  color: #FFD600;
+  flex-shrink: 0;
+}
+.dx-profile-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dx-profile-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f3f8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dx-profile-sub {
+  font-size: 11px;
+  color: #7a7e92;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dx-profile-row { padding: 14px 0 4px; }
+.dx-profile-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a7e92;
+  margin-bottom: 6px;
+}
+.dx-profile-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e7eaf4;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+}
+.dx-profile-input:focus {
+  border-color: rgba(255, 214, 0, 0.45);
+  background: rgba(255, 214, 0, 0.04);
+  box-shadow: 0 0 0 3px rgba(255, 214, 0, 0.08);
+}
+.dx-profile-hint {
+  font-size: 11px;
+  color: #5d6177;
+  margin-top: 6px;
+}
+.dx-profile-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 14px 0 8px;
+}
+.dx-profile-stat {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.dx-profile-stat-n {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFD600;
+  letter-spacing: 0.02em;
+}
+.dx-profile-stat-l {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7a7e92;
+  margin-top: 2px;
+}
+.dx-profile-actions { padding-top: 6px; }
+.dx-profile-btn {
+  width: 100%;
+  background: rgba(255, 51, 51, 0.08);
+  color: #ff8a8a;
+  border: 1px solid rgba(255, 51, 51, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+.dx-profile-btn:not(:disabled):hover {
+  background: rgba(255, 51, 51, 0.16);
+  color: #ffbcbc;
+  border-color: rgba(255, 51, 51, 0.35);
+}
+.dx-profile-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+/* Secondary action — neutral hover, sits above the destructive clear-history
+ * button. Used for dev tools like the demo loader. */
+.dx-profile-btn-secondary {
+  background: rgba(255, 214, 0, 0.06);
+  color: #f1f3f8;
+  border-color: rgba(255, 214, 0, 0.18);
+  margin-bottom: 6px;
+}
+.dx-profile-btn-secondary:not(:disabled):hover {
+  background: rgba(255, 214, 0, 0.13);
+  color: #FFD600;
+  border-color: rgba(255, 214, 0, 0.45);
+}
+.dx-profile-foot {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+  color: #5d6177;
+  text-align: center;
+}
+
+/* Credit packages section inside the profile popover. */
+.dx-profile-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.dx-profile-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7a7e92;
+  margin-bottom: 10px;
+}
+.dx-profile-section-sub {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 10px;
+  color: #5d6177;
+}
+.dx-profile-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dx-profile-tier {
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.15s;
+  color: inherit;
+  font-family: inherit;
+}
+.dx-profile-tier:hover {
+  background: rgba(255, 214, 0, 0.05);
+  border-color: rgba(255, 214, 0, 0.35);
+  transform: translateY(-1px);
+}
+.dx-profile-tier.is-featured {
+  border-color: rgba(255, 214, 0, 0.3);
+  background: linear-gradient(180deg, rgba(255, 214, 0, 0.06), rgba(255, 214, 0, 0.02));
+}
+.dx-tier-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dx-tier-row-end {
+  justify-content: space-between;
+  margin-top: 2px;
+}
+.dx-tier-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f3f8;
+}
+.dx-tier-badge {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 214, 0, 0.14);
+  color: #FFD600;
+}
+.dx-tier-credits {
+  font-size: 12px;
+  color: #c0c4d2;
+}
+.dx-tier-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #FFD600;
+}
+.dx-tier-perunit {
+  margin-top: 2px;
+  font-size: 10px;
+  color: #5d6177;
+  letter-spacing: 0.02em;
+}
+
 /* ── Welcome state ───────────────────────────────────────────────────── */
 .dx-welcome {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  /* safe-center keeps the welcome content centered when it fits, but falls
+   * back to top-aligned when it doesn't, which prevents the Hey-I-am-Dex
+   * headline (and the orb) from being clipped off the top of the viewport
+   * on shorter screens. overflow-y auto then lets the user scroll. */
+  align-items: safe center;
+  justify-content: safe center;
+  padding: 36px 24px 48px;
   overflow-y: auto;
   position: relative;
   z-index: 2;
@@ -1367,7 +2245,7 @@ const DEX_CSS = `
 }
 .dx-welcome-avatar { margin-bottom: 8px; }
 .dx-welcome-h1 {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 52px;
   letter-spacing: 0.04em;
   color: #FFD600;
@@ -1383,6 +2261,33 @@ const DEX_CSS = `
   margin: 0;
 }
 .dx-welcome-sub em { color: #FFD600; font-style: normal; font-weight: 600; }
+
+/* Wrapper around the greeting lines so AnimatePresence can fade them out
+ * as a unit. Inherits the column alignment from .dx-welcome-in. */
+.dx-welcome-greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Typewriter caret — sits on the active line while Dex is mid-sentence,
+ * disappears as soon as that line finishes typing. Yellow to match the
+ * orb / accent palette. */
+.dx-caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 3px;
+  vertical-align: -2px;
+  background: #FFD600;
+  box-shadow: 0 0 6px rgba(255, 214, 0, 0.55);
+  animation: dx-caret-blink 0.75s steps(2) infinite;
+}
+@keyframes dx-caret-blink {
+  0%,  50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
 
 .dx-chips {
   display: flex;
@@ -1482,7 +2387,7 @@ const DEX_CSS = `
   line-height: 1.6;
   color: #e3e6ee;
   word-wrap: break-word;
-  font-family: "Crimson Pro", "Segoe UI", sans-serif;
+  font-family: inherit;
 }
 .dx-bub-row.is-user .dx-bub {
   background: rgba(255, 214, 0, 0.1);
@@ -1539,7 +2444,7 @@ const DEX_CSS = `
   border-radius: 14px;
   border: 2px solid currentColor;
   display: flex; align-items: center; justify-content: center;
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 42px; line-height: 1;
   text-shadow: 0 0 18px currentColor;
   background: rgba(0, 0, 0, 0.5);
@@ -1556,14 +2461,14 @@ const DEX_CSS = `
   border-radius: 7px;
 }
 .dx-pill-l {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 9.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #8b90a8;
 }
 .dx-pill-v {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 500;
 }
@@ -1580,7 +2485,7 @@ const DEX_CSS = `
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 .dx-lvl-tag {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 12px;
   letter-spacing: 0.1em;
   padding: 3px 8px;
@@ -1589,7 +2494,7 @@ const DEX_CSS = `
   text-align: center;
 }
 .dx-lvl-px {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
 }
@@ -1605,7 +2510,7 @@ const DEX_CSS = `
   background: rgba(255, 51, 51, 0.07);
 }
 .dx-block-t {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 12px;
   letter-spacing: 0.14em;
   color: var(--bc, #FFD600);
@@ -1622,9 +2527,10 @@ const DEX_CSS = `
 .dx-foot {
   position: relative;
   padding: 16px 22px 20px;
-  border-top: 1px solid rgba(255, 214, 0, 0.08);
-  background: rgba(8, 9, 14, 0.85);
-  backdrop-filter: blur(10px);
+  /* Wrapper is transparent so the page background (or the infinite-grid /
+   * particles behind it) shows through. The composer shell itself
+   * (.dx-composer-shell in DexChatComposer.jsx) carries the glass effect. */
+  background: transparent;
   z-index: 5;
 }
 .dx-input-wrap {
@@ -1649,7 +2555,7 @@ const DEX_CSS = `
   border: none;
   outline: none;
   color: #e3e6ee;
-  font-family: "Crimson Pro", "Segoe UI", sans-serif;
+  font-family: inherit;
   font-size: 15px;
   line-height: 1.5;
   resize: none;
@@ -1695,6 +2601,262 @@ const DEX_CSS = `
   background: rgba(255, 214, 0, 0.08);
   border-color: rgba(255, 214, 0, 0.55);
   transform: translateY(-1px);
+}
+
+/* ── Composer (new chat input — adapted from animated-ai-chat) ────────── */
+.dx-composer {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.36);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.dx-composer:focus-within {
+  border-color: rgba(255, 214, 0, 0.4);
+  box-shadow: 0 14px 50px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 214, 0, 0.14);
+}
+.dx-composer-ta {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: #e3e6ee;
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.55;
+  padding: 16px 18px 6px;
+  max-height: 160px;
+  box-sizing: border-box;
+}
+.dx-composer-ta::placeholder { color: #5a5e72; }
+.dx-composer-ta:disabled { opacity: 0.6; }
+.dx-composer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 10px;
+}
+.dx-composer-tools { display: flex; align-items: center; gap: 4px; }
+.dx-composer-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: #8b90a8;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.dx-composer-btn:not(:disabled):hover { color: #FFD600; background: rgba(255, 214, 0, 0.08); }
+.dx-composer-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.dx-composer-send {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px;
+  border-radius: 12px;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.06);
+  color: #5a5e72;
+  cursor: not-allowed;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.dx-composer-send.is-ready {
+  background: linear-gradient(135deg, #FFD600, #E0BA00);
+  color: #14151c;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(255, 214, 0, 0.28);
+}
+.dx-composer-send.is-ready:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px rgba(255, 214, 0, 0.42);
+}
+
+/* ── New composer (DexChatComposer.jsx) ───────────────────────────────── */
+.dx-composer-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+/* Cursor-tracking diffuse glow behind the input on focus. Pulled from the
+ * animated-ai-chat reference but tinted Dex yellow and lower opacity so it
+ * doesn't compete with the orb. */
+.dx-composer-aura {
+  position: fixed;
+  pointer-events: none;
+  width: 50rem;
+  height: 50rem;
+  border-radius: 9999px;
+  opacity: 0.04;
+  background: radial-gradient(circle, rgba(255, 214, 0, 0.7), rgba(255, 232, 148, 0.25) 40%, transparent 70%);
+  filter: blur(96px);
+  z-index: 0;
+}
+.dx-composer-shell {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.018);
+  backdrop-filter: blur(32px) saturate(1.4);
+  -webkit-backdrop-filter: blur(32px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.dx-composer-shell:focus-within {
+  border-color: rgba(255, 214, 0, 0.35);
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 214, 0, 0.18);
+}
+.dx-composer-pad { padding: 16px 18px 4px; }
+.dx-composer-ta-new {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: rgba(231, 234, 244, 0.92);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.55;
+  padding: 4px 0;
+  min-height: 60px;
+  box-sizing: border-box;
+}
+.dx-composer-ta-new::placeholder { color: rgba(231, 234, 244, 0.22); }
+.dx-composer-ta-new:disabled { opacity: 0.55; }
+.dx-composer-attach {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 18px 10px;
+}
+.dx-composer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(231, 234, 244, 0.72);
+  font-family: inherit;
+  font-size: 11px;
+}
+.dx-composer-chip-x {
+  display: inline-flex;
+  background: transparent;
+  border: none;
+  color: rgba(231, 234, 244, 0.45);
+  cursor: pointer;
+  padding: 0;
+}
+.dx-composer-chip-x:hover { color: rgba(231, 234, 244, 0.9); }
+.dx-composer-row-new {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+.dx-composer-tools-new {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dx-composer-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: rgba(231, 234, 244, 0.42);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.dx-composer-tool:not(:disabled):hover {
+  color: #FFD600;
+  background: rgba(255, 214, 0, 0.08);
+}
+.dx-composer-tool:disabled { opacity: 0.35; cursor: not-allowed; }
+.dx-composer-send-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(231, 234, 244, 0.45);
+  cursor: not-allowed;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.dx-composer-send-new.is-ready {
+  background: linear-gradient(135deg, #FFD600, #E0BA00);
+  color: #14151c;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(255, 214, 0, 0.28);
+}
+.dx-composer-send-new.is-ready:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px rgba(255, 214, 0, 0.42);
+}
+.dx-composer-send-new:disabled { transform: none; }
+.dx-spin { animation: dx-rotate 1.2s linear infinite; }
+@keyframes dx-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Suggestion pills below the composer shell — same look as the
+ * reference design's "Clone UI / Import Figma / Create Page / Improve"
+ * row, but populated with Dex's SUGGESTED_PROMPTS. */
+.dx-composer-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.dx-composer-suggest-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(231, 234, 244, 0.62);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.dx-composer-suggest-btn:not(:disabled):hover {
+  color: #FFD600;
+  border-color: rgba(255, 214, 0, 0.25);
+  background: rgba(255, 214, 0, 0.04);
+}
+.dx-composer-suggest-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ── Voice mode overlay ─────────────────────────────────────────────── */
@@ -1759,7 +2921,7 @@ const DEX_CSS = `
 }
 
 .dx-voice-state {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 26px;
   letter-spacing: 0.16em;
   color: #FFD600;
@@ -1781,7 +2943,7 @@ const DEX_CSS = `
 }
 .dx-voice-cap-mine { color: #ffe69e; font-style: italic; }
 .dx-voice-cap-dex  { color: #d8dce8; }
-.dx-voice-cap-dim  { color: #7a7e92; font-family: "JetBrains Mono", monospace; font-size: 14px; letter-spacing: 0.06em; }
+.dx-voice-cap-dim  { color: #7a7e92; font-family: inherit; font-size: 14px; letter-spacing: 0.06em; }
 .dx-voice-cap-err  { color: #f0c8c8; }
 
 .dx-voice-foot {
@@ -1839,7 +3001,7 @@ const DEX_CSS = `
   color: #FF6666;
 }
 .dx-voice-help {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.08em;
   color: #7a7e92;
@@ -1857,7 +3019,7 @@ const DEX_CSS = `
 .dx-foot-hint {
   max-width: 760px;
   margin: 10px auto 0;
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 10.5px;
   color: #5a5e72;
   letter-spacing: 0.06em;
@@ -1875,7 +3037,7 @@ const DEX_CSS = `
   align-items: center;
   gap: 12px;
   margin-bottom: 18px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -2038,7 +3200,7 @@ const DEX_CSS = `
 .dx-card-letter-text {
   position: relative;
   z-index: 2;
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 64px;
   line-height: 1;
   color: var(--gc, #FFD600);
@@ -2053,14 +3215,14 @@ const DEX_CSS = `
   flex-wrap: wrap;
 }
 .dx-card-symbol {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 30px;
   letter-spacing: 0.06em;
   color: #FFD600;
   line-height: 1;
 }
 .dx-card-tf {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -2075,21 +3237,22 @@ const DEX_CSS = `
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 8px 12px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 9px 14px;
+  /* Solid mid-gray tile clearly distinct from the .dx-tp-head bg (#20232e).
+   * 1px crisp border for definition, no glass / glow. */
+  background: #2a2e3c;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .dx-card-stat-l {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 9px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #6c708a;
 }
 .dx-card-stat-v {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -2097,13 +3260,17 @@ const DEX_CSS = `
 }
 
 /* ── Trade Terminal Panel (graded messages) ────────────────────────── */
+/* Solid lighter-gray dashboard. No backdrop blur (the liquid-glass attempt
+ * read as muddy on the dark page bg). Hierarchy comes from a step-up gray
+ * scale (page → panel → inner sections → tiles) plus crisp 1–2px borders
+ * to draw clean separations. */
 .dx-tp {
   width: 100%;
-  background: linear-gradient(180deg, rgba(14, 16, 22, 0.95), rgba(8, 10, 16, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #1a1d27;
+  border: 1px solid rgba(255, 214, 0, 0.22);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
   animation: dx-msg-in 0.32s ease both;
 }
 
@@ -2113,23 +3280,67 @@ const DEX_CSS = `
   justify-content: space-between;
   gap: 16px;
   padding: 18px 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: #20232e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   flex-wrap: wrap;
 }
 .dx-tp-id { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .dx-tp-badge { flex-shrink: 0; }
+
+/* Modern grade badge — solid dark tile, color-coded border + letter.
+ * Matches the rest of the dashboard's flat-gray + bright-border treatment.
+ * --gc is the grade color (yellow A, cyan B, etc.) passed via inline style. */
+.dx-grade-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: #272b39;
+  border: 2px solid var(--gc, #FFD600);
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+}
+.dx-grade-eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #7a7e92;
+  margin-top: 2px;
+  font-weight: 600;
+}
+.dx-grade-letter {
+  font-size: 46px;
+  font-weight: 800;
+  color: var(--gc, #FFD600);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  /* Tiny inner glow on the letter only — no shadow on the tile itself,
+   * keeps the modern flat feel while still giving the grade some punch. */
+  text-shadow: 0 0 18px color-mix(in srgb, var(--gc, #FFD600) 35%, transparent);
+}
+.dx-grade-bar {
+  position: absolute;
+  bottom: 0;
+  left: 12%;
+  right: 12%;
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: var(--gc, #FFD600);
+  opacity: 0.85;
+}
 .dx-tp-id-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .dx-tp-ticker {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 24px;
   letter-spacing: 0.06em;
   color: #FFFFFF;
   line-height: 1;
 }
 .dx-tp-sub {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 10.5px;
   letter-spacing: 0.14em;
   color: #FFFFFF;
@@ -2149,8 +3360,9 @@ const DEX_CSS = `
 }
 .dx-tp-left {
   padding: 18px 20px 22px;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.18);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  /* Solid step lighter than the panel base (#1a1d27 → #1f2330). */
+  background: #1f2330;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2160,7 +3372,7 @@ const DEX_CSS = `
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 11.5px;
   letter-spacing: 0.22em;
   color: #6c708a;
@@ -2202,7 +3414,7 @@ const DEX_CSS = `
   justify-content: center;
   height: 280px;
   color: #6c708a;
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 12px;
 }
 .dx-tp-strip {
@@ -2219,20 +3431,27 @@ const DEX_CSS = `
   align-items: center;
   gap: 4px;
   padding: 12px 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  /* Solid mid-gray fill + crisp 2px colored border. No glow, no gradient.
+   * The level identity (Entry yellow, Stop red, TPs green) lives in the
+   * border + text only. */
+  background: #272b39;
+  border: 2px solid var(--cc, #FFD600);
   border-radius: 10px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: background 0.18s, transform 0.15s;
+}
+.dx-tp-chip:hover {
+  background: #2e3243;
+  transform: translateY(-1px);
 }
 .dx-tp-chip-l {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.18em;
   color: var(--cc, #FFD600);
   text-transform: uppercase;
 }
 .dx-tp-chip-v {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 18px;
   font-weight: 600;
   color: var(--cc, #FFD600);
@@ -2240,8 +3459,8 @@ const DEX_CSS = `
 }
 
 .dx-tp-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: #1f2330;
 }
 .dx-tp-bottom .dx-card-section { padding: 32px 22px 14px; }
 .dx-tp-bottom .dx-card-insights { padding: 18px 22px 10px; }
@@ -2287,14 +3506,14 @@ const DEX_CSS = `
   padding: 0 2px;
 }
 .dx-card-chart-label {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 12px;
   letter-spacing: 0.22em;
   color: #6c708a;
   text-transform: uppercase;
 }
 .dx-card-chart-tf {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 10px;
   letter-spacing: 0.1em;
   color: #5a5e72;
@@ -2309,7 +3528,7 @@ const DEX_CSS = `
 /* Section */
 .dx-card-section { padding: 28px 22px 14px; }
 .dx-card-section-label {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 11.5px;
   letter-spacing: 0.22em;
   color: #6c708a;
@@ -2350,14 +3569,14 @@ const DEX_CSS = `
   min-width: 0;
 }
 .dx-card-lvl-label {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.16em;
   color: var(--lc, #FFD600);
   text-transform: uppercase;
 }
 .dx-card-lvl-price {
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 18px;
   font-weight: 600;
   color: var(--lc, #FFD600);
@@ -2379,14 +3598,16 @@ const DEX_CSS = `
 }
 .dx-card-insight {
   padding: 14px 18px 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  /* Solid raised tile, lighter than the .dx-tp-bottom (#1f2330) so it
+   * reads as a step up. Crisp colored border in the insight color (via
+   * --ic) makes the section identifiable at a glance. */
+  background: #272b39;
+  border: 1px solid color-mix(in srgb, var(--ic, #FFD600) 38%, rgba(255, 255, 255, 0.10));
   border-radius: 10px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .dx-card-insight.is-alert {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: #272b39;
+  border-color: rgba(255, 51, 51, 0.45);
 }
 .dx-card-insight-head {
   display: inline-flex;
@@ -2412,7 +3633,7 @@ const DEX_CSS = `
   background: #FF3333;
 }
 .dx-card-insight-title {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   font-size: 11px;
   letter-spacing: 0.18em;
   color: var(--ic, #FFD600);
@@ -2429,7 +3650,7 @@ const DEX_CSS = `
 
 .dx-card-foot {
   padding: 12px 22px 16px;
-  font-family: "JetBrains Mono", monospace;
+  font-family: inherit;
   font-size: 10px;
   letter-spacing: 0.1em;
   color: #5a5e72;

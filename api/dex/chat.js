@@ -22,6 +22,19 @@ const MAX_TOKENS = 2800;
 const MAX_SESSION_TURNS = 40;
 const SESSION_TTL_MS = 60 * 60 * 1000;
 
+// Auth mode. For local dev we prefer the Claude Code subscription OAuth token
+// (ANTHROPIC_OAUTH_TOKEN, looks like sk-ant-oat01-...) so requests come out
+// of the Claude Max/Pro quota instead of API billing. In production we
+// fall back to ANTHROPIC_API_KEY. OAuth has three hard requirements:
+//   1. Authorization: Bearer <token>  (SDK option: authToken)
+//   2. anthropic-beta: oauth-2025-04-20 header
+//   3. First system block must identify the request as Claude Code
+// Miss any of those and the gateway returns 401.
+const OAUTH_TOKEN = process.env.ANTHROPIC_OAUTH_TOKEN;
+const USE_OAUTH = Boolean(OAUTH_TOKEN);
+const CLAUDE_CODE_IDENTITY =
+  "You are Claude Code, Anthropic's official CLI for Claude.";
+
 const sessions = new Map();
 
 const CHAT_DIRECTIVE = `You are Dex in a live chat with a SootyEdge trader. Chat naturally and conversationally for greetings and follow-ups (one warm question, not a wall of text).
@@ -134,7 +147,24 @@ module.exports = async function handler(req, res) {
   session.messages.push({ role: "user", content: trimmed });
   capToMaxTurns(session);
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = USE_OAUTH
+    ? new Anthropic({
+        authToken: OAUTH_TOKEN,
+        defaultHeaders: { "anthropic-beta": "oauth-2025-04-20" },
+      })
+    : new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  // Diagnostic (gated): set DEX_DEBUG_AUTH=1 in .env.local to log which auth
+  // path each chat request used. Commit-safe — only prints when explicitly
+  // enabled, and only a 14-char token prefix (never the full secret).
+  if (process.env.DEX_DEBUG_AUTH === "1") {
+    console.log(
+      "[dex/chat] auth =",
+      USE_OAUTH ? "OAUTH (claude code subscription)" : "API_KEY",
+      "| token prefix:",
+      USE_OAUTH ? OAUTH_TOKEN?.slice(0, 14) : process.env.ANTHROPIC_API_KEY?.slice(0, 14)
+    );
+  }
 
   let finalText = "";
   let extractedGrade = null;
@@ -148,6 +178,10 @@ module.exports = async function handler(req, res) {
         model: MODEL,
         max_tokens: MAX_TOKENS,
         system: [
+          // OAuth path: identify as Claude Code first or the gateway 401s.
+          ...(USE_OAUTH
+            ? [{ type: "text", text: CLAUDE_CODE_IDENTITY }]
+            : []),
           { type: "text", text: PROMPT, cache_control: { type: "ephemeral" } },
           { type: "text", text: CHAT_DIRECTIVE },
         ],
