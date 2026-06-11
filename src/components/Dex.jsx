@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineStyle } from "lightweight-charts";
 import { chatWithDex } from "../lib/dex-api";
-import DexReactiveCore from "./DexReactiveCore.jsx";
+import DexPinFace from "./DexPinFace.jsx";
 import DexChatComposer from "./DexChatComposer.jsx";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/tooltip.jsx";
 import { WaveLoader } from "./loader.jsx";
@@ -63,6 +63,13 @@ function buildDemoTSLAResponse() {
       risk_reward: "1:2.3",
       setup_type: "pullback",
       regime: "trending",
+      conviction: 72,
+      indicators: {
+        flow: { state: "TRIGGER UP", level: 72, tone: "good", detail: "Composite SCORE 56 FIRE, HTF and LTF agree bullish, pressure above the support line." },
+        zones: { state: "RETEST ABOVE", level: 64, tone: "info", detail: "Price pulling into the Retest Above band while holding over the anchor mid." },
+        dot: { state: "SMF 72 ↑", level: 72, tone: "good", detail: "Green fusion dot 4 bars ago, SMF above 50, volume 1.8x (high)." },
+        proplus: { state: "LONG · SET", level: 100, tone: "info", detail: "Auto-direction Long. Entry, SL, and TP1–TP3 plotted from pivots." },
+      },
       ticker: "TSLA",
       timeframe: "1d",
       entry: +(last - 4).toFixed(2),
@@ -129,19 +136,29 @@ export default function Dex() {
   //   last assistant message arrived in last ~1.8s → "responding"
   //   otherwise → "idle"
   const [lastResponseAt, setLastResponseAt] = useState(0);
+  // How long the face keeps "talking" after a reply lands — scaled to reply
+  // length so a long answer doesn't cut off after a token mouth-flap.
+  const [respondingMs, setRespondingMs] = useState(1800);
   const [tickNow, setTickNow] = useState(0);
   // Cheap re-render tick so the "responding" window closes naturally.
   useEffect(() => {
     if (!lastResponseAt) return;
-    const t = setTimeout(() => setTickNow((n) => n + 1), 1800);
+    const t = setTimeout(() => setTickNow((n) => n + 1), respondingMs);
     return () => clearTimeout(t);
-  }, [lastResponseAt]);
+  }, [lastResponseAt, respondingMs]);
+  function markResponded(text) {
+    setRespondingMs(Math.min(7000, Math.max(2000, (text || "").length * 12)));
+    setLastResponseAt(Date.now());
+  }
   const heroState = (() => {
     if (sending) return "thinking";
-    if (lastResponseAt && Date.now() - lastResponseAt < 1800) return "responding";
+    if (lastResponseAt && Date.now() - lastResponseAt < respondingMs) return "responding";
     if (input && input.trim().length > 0) return "typing";
     return "idle";
   })();
+  // The welcome greeting types itself out like Dex talking — while it does,
+  // the background face talks along with it.
+  const [welcomeTyping, setWelcomeTyping] = useState(false);
   // Suppress lint on tickNow — its only job is to invalidate this closure.
   void tickNow;
 
@@ -227,7 +244,7 @@ export default function Dex() {
         ...m,
         { role: "assistant", content: data.message || "", grade: data.grade || null },
       ]);
-      setLastResponseAt(Date.now());
+      markResponded(data.message);
     } catch (err) {
       setMessages((m) => [
         ...m,
@@ -244,13 +261,6 @@ export default function Dex() {
       ]);
     } finally {
       setSending(false);
-    }
-  }
-
-  function handleKeyDown(e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send();
     }
   }
 
@@ -283,7 +293,7 @@ export default function Dex() {
       { role: "user", content: "Play on TSLA right now" },
       { role: "assistant", content: data.content, grade: data.grade },
     ]);
-    setLastResponseAt(Date.now());
+    markResponded(data.content);
     setProfileOpen(false);
   }
 
@@ -326,16 +336,40 @@ export default function Dex() {
 
   return (
     <TooltipProvider delayDuration={150}>
-    <div className="dx-app">
+    <div className="dx-app dx-hud">
       <style>{DEX_CSS}</style>
       <DexGridBG />
+      {/* Pin-art face wall — covers the entire app background. Talks while
+        * the welcome greeting types and whenever a reply lands. Unmounted
+        * while the voice overlay is open (that overlay runs its own face;
+        * one WebGL context at a time keeps low-end GPUs happy). */}
+      {!voiceOpen && (
+        <div className="dx-face-bg" aria-hidden="true">
+          <DexPinFace
+            state={empty && welcomeTyping ? "responding" : heroState}
+            pulseSignal={pulseSignal}
+          />
+        </div>
+      )}
+      <div className="dx-scanlines" aria-hidden="true" />
+      <HudCorners />
 
       <header className="dx-top">
-        <a href="/dex" className="dx-top-brand" aria-label="SootyDex home">
-          {/* Just the wordmark — symbol icon is dropped per design direction.
-            * Swap to the Light variant when we add a light-mode toggle. */}
-          <img src="/SD-WordM-Dark.svg" alt="SootyDex" className="dx-top-wm-img" />
-        </a>
+        <div className="dx-top-l">
+          <a href="/dex" className="dx-top-brand" aria-label="SootyDex home">
+            {/* Just the wordmark — symbol icon is dropped per design direction.
+              * Swap to the Light variant when we add a light-mode toggle. */}
+            <img src="/SD-WordM-Dark.svg" alt="SootyDex" className="dx-top-wm-img" />
+          </a>
+          <span className="dx-top-tag">TRADEGRADER</span>
+        </div>
+
+        <div className="dx-top-c">
+          <span className="dx-top-chip"><span className="dx-online-dot" />SYSTEM ONLINE</span>
+          <span className="dx-top-chip dx-top-chip-dim">SES {sessionId ? sessionId.slice(0, 6).toUpperCase() : "NEW"}</span>
+          <HudClock />
+        </div>
+
         <div className="dx-top-meta">
           {messages.length > 0 && (
             <button type="button" className="dx-top-btn" onClick={reset} title="New conversation">
@@ -362,8 +396,11 @@ export default function Dex() {
         </div>
       </header>
 
+      <MiniTicker />
+      <div className="dx-window">
+        <HudCorners accent="rgba(0,212,212,0.45)" />
       {empty ? (
-        <Welcome heroState={heroState} pulseSignal={pulseSignal} />
+        <Welcome onTypingChange={setWelcomeTyping} />
       ) : (
         <main className="dx-stream" ref={scrollRef}>
           <div className="dx-stream-in">
@@ -374,6 +411,7 @@ export default function Dex() {
           </div>
         </main>
       )}
+      </div>
 
       <footer className="dx-foot">
         <DexChatComposer
@@ -712,18 +750,23 @@ function Typewriter({ text, speed = 28, onDone, active = true }) {
   );
 }
 
-function Welcome({ heroState = "idle", pulseSignal = 0 }) {
+function Welcome({ onTypingChange }) {
   // Welcome reads like Dex actually speaking: each line types out character
   // by character, with a blinking caret on the active line. While he's
-  // "talking" the orb is forced into its "responding" state so it pulses in
-  // sync with the words. Once all three lines have landed, the block sits
-  // for ~6s then fades away — orb, pills, composer take over.
-  // (Email collection moved to the Profile popup — Item 8.)
+  // "talking", the parent is told (onTypingChange) so the fullscreen pin-art
+  // face mouths along with the words. Once all three lines have landed, the
+  // block sits for ~6s then fades away — face, pills, composer take over.
+  // (The old reactor orb is gone — the background face IS the avatar now.)
   const [stage, setStage] = useState(0); // 0=h1, 1=sub1, 2=sub2, 3=all done
   const [textVisible, setTextVisible] = useState(true);
   const isTyping = stage < 3;
-  // Override the parent's heroState while Dex is mid-sentence.
-  const effectiveHeroState = isTyping ? "responding" : heroState;
+
+  // Tell the parent whether Dex is mid-sentence; clear on unmount.
+  useEffect(() => {
+    onTypingChange?.(isTyping);
+    return () => onTypingChange?.(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTyping]);
 
   // Once the last line finishes typing, give it a beat then fade out.
   useEffect(() => {
@@ -744,15 +787,6 @@ function Welcome({ heroState = "idle", pulseSignal = 0 }) {
           <span className="dx-welcome-tag">TradeGrader</span>
           <span className="dx-welcome-sep" />
           <span className="dx-welcome-tag-dim">AI Trading Mentor</span>
-        </motion.div>
-
-        <motion.div
-          className="dx-welcome-avatar"
-          initial={{ opacity: 0, scale: 0.88 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-        >
-          <DexReactiveCore state={effectiveHeroState} size={280} pulseSignal={pulseSignal} />
         </motion.div>
 
         {/* Greeting block: each line types in sequence. The whole block sits
@@ -1124,21 +1158,34 @@ function TradePanel({ grade, text }) {
     { label: "TP3", price: grade.tp3, reason: grade.tp3_reason, color: "#03CD00" },
   ];
 
+  const conviction = grade.conviction ?? gradeScore(grade.grade);
+
   return (
-    <div className="dx-tp" style={{ "--gc": color }}>
-      <div className="dx-tp-head">
-        <div className="dx-tp-id">
-          <GradeBadge letter={grade.grade} color={color} />
-          <div className="dx-tp-id-info">
-            {grade.ticker && <div className="dx-tp-ticker">{grade.ticker}</div>}
-            <div className="dx-tp-sub">
-              {grade.timeframe && <span>{grade.timeframe.toUpperCase()}</span>}
-              {grade.setup_type && (
-                <>
-                  <span className="dx-tp-sub-sep">·</span>
-                  <span>{grade.setup_type}</span>
-                </>
-              )}
+    <div className="dx-dash" style={{ "--gc": color }}>
+      <HudCorners accent="rgba(0,212,212,0.5)" />
+
+      {/* ── HUD command bar: grade gauge · identity · meters ── */}
+      <div className="dx-dash-head">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="dx-dash-grade" style={{ cursor: "help" }}>
+              <GradeGauge letter={grade.grade} color={color} />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" sideOffset={8} className="dx-tooltip">
+            {gradeBlurb(grade.grade)}
+          </TooltipContent>
+        </Tooltip>
+
+        <div className="dx-dash-id">
+          <div className="dx-dash-id-top">
+            {grade.ticker && <span className="dx-dash-ticker">{grade.ticker}</span>}
+            {grade.timeframe && <span className="dx-dash-tf">{grade.timeframe.toUpperCase()}</span>}
+            <span className="dx-dash-sig">SIGNAL LOCK</span>
+          </div>
+          {(grade.setup_type || grade.regime) && (
+            <div className="dx-dash-sub">
+              {grade.setup_type && <span>{grade.setup_type}</span>}
               {grade.regime && (
                 <>
                   <span className="dx-tp-sub-sep">·</span>
@@ -1146,37 +1193,41 @@ function TradePanel({ grade, text }) {
                 </>
               )}
             </div>
-          </div>
+          )}
         </div>
-        <div className="dx-tp-stats">
-          {grade.risk_reward && <Stat label="R:R" value={grade.risk_reward} color="#FFFFFF" />}
-          {grade.setup_type && <Stat label="Setup" value={grade.setup_type} color="#FFFFFF" />}
-          {grade.regime && <Stat label="Regime" value={grade.regime} color="#FFFFFF" />}
+
+        <div className="dx-dash-meters">
+          <RRMeter value={grade.risk_reward} color={color} />
+          <div className="dx-dash-stats">
+            {grade.setup_type && <HudStat label="SETUP" value={grade.setup_type} />}
+            {grade.regime && <HudStat label="REGIME" value={grade.regime} />}
+            <HudStat label="CONVICTION" value={`${conviction}%`} color="#00D4D4" />
+          </div>
         </div>
       </div>
 
-      <div className="dx-tp-main">
-        <aside className="dx-tp-left">
-          <div className="dx-tp-section-label">
-            <img src="/SD-WordM-Dark.svg" alt="Dex" className="dx-bub-wm" />
-            <span>'s breakdown</span>
+      {/* ── Body: chart + targeting on the left, indicator array + breakdown on the right ── */}
+      <div className="dx-dash-body">
+        <section className="dx-dash-main">
+          <div className="dx-chartframe">
+            <div className="dx-chartframe-head">
+              <span className="dx-hud-label">PRICE ACTION</span>
+              <span className="dx-hud-sub">
+                {(grade.chart?.timeframe || grade.timeframe || "1D").toUpperCase()}
+                {grade.chart?.bars?.length ? ` · ${grade.chart.bars.length} BARS` : ""}
+              </span>
+            </div>
+            <div className="dx-chartframe-body">
+              {grade.chart?.bars?.length > 0 ? (
+                <DexChart chart={grade.chart} grade={grade} height={300} />
+              ) : (
+                <div className="dx-tp-chart-empty">Live chart unavailable for this grade.</div>
+              )}
+              <ChartReticle />
+            </div>
           </div>
-          <div className="dx-tp-narrative">
-            <Text text={narrative} />
-          </div>
-        </aside>
 
-        <section className="dx-tp-right">
-          <div className="dx-tp-chart">
-            {grade.chart?.bars?.length > 0 ? (
-              <DexChart chart={grade.chart} grade={grade} height={360} />
-            ) : (
-              <div className="dx-tp-chart-empty">
-                Live chart unavailable for this grade.
-              </div>
-            )}
-          </div>
-          <div className="dx-tp-strip">
+          <div className="dx-levelrail">
             <LevelChip label="Entry" price={grade.entry} color="#FFD600" reason={grade.entry_reason} />
             <LevelChip label="Stop" price={grade.stop_loss} color="#FF3333" reason={grade.stop_reason} />
             <LevelChip label="TP1" price={grade.tp1} color="#03CD00" reason={grade.tp1_reason} />
@@ -1184,27 +1235,36 @@ function TradePanel({ grade, text }) {
             <LevelChip label="TP3" price={grade.tp3} color="#03CD00" reason={grade.tp3_reason} />
           </div>
         </section>
+
+        <aside className="dx-dash-side">
+          <IndicatorPanel grade={grade} />
+          <div className="dx-dash-narr">
+            <div className="dx-dash-narr-head">
+              <img src="/SD-WordM-Dark.svg" alt="Dex" className="dx-bub-wm" />
+              <span className="dx-hud-label">BREAKDOWN</span>
+            </div>
+            <div className="dx-dash-narr-body">
+              <Text text={narrative} />
+            </div>
+          </div>
+        </aside>
       </div>
 
-      <div className="dx-tp-bottom">
-        <div className="dx-card-insights">
-          {grade.why_this_works && (
-            <Insight title="Why this works" body={grade.why_this_works} color="#FFD600" />
-          )}
-          {grade.what_youre_learning && (
-            <Insight
-              title="What you're learning"
-              body={grade.what_youre_learning}
-              color="#00D4D4"
-            />
-          )}
-          {grade.risk_alert && (
-            <Insight title="Risk alert" body={grade.risk_alert} color="#FF3333" alert />
-          )}
-        </div>
-        <div className="dx-card-foot">
-          Educational analysis. Not investment advice. Trade your own risk.
-        </div>
+      {/* ── Teaching blocks (collapsible) ── */}
+      <div className="dx-dash-insights">
+        {grade.why_this_works && (
+          <CollapsibleInsight title="Why this works" body={grade.why_this_works} color="#FFD600" />
+        )}
+        {grade.what_youre_learning && (
+          <CollapsibleInsight title="What you're learning" body={grade.what_youre_learning} color="#00D4D4" />
+        )}
+        {grade.risk_alert && (
+          <CollapsibleInsight title="Risk alert" body={grade.risk_alert} color="#FF3333" alert />
+        )}
+      </div>
+
+      <div className="dx-card-foot">
+        Educational analysis. Not investment advice. Trade your own risk.
       </div>
     </div>
   );
@@ -1359,6 +1419,9 @@ function VoiceMode({ sessionId, email, onSessionUpdate, onMessage, onClose }) {
   const [transcript, setTranscript] = useState("");
   const [lastReply, setLastReply] = useState("");
   const [error, setError] = useState(null);
+  // Word-boundary counter from TTS — each increment kicks the pin face's
+  // mouth so the lip-sync follows the actual cadence of the speech.
+  const [mouthPulse, setMouthPulse] = useState(0);
 
   const recognitionRef = useRef(null);
   const utteranceRef = useRef(null);
@@ -1497,6 +1560,10 @@ function VoiceMode({ sessionId, email, onSessionUpdate, onMessage, onClose }) {
     u.pitch = 1.0;
     u.volume = 1.0;
     if (voiceRef.current) u.voice = voiceRef.current;
+    // Chrome/Edge fire a boundary per word for local voices. Each one kicks
+    // the face's mouth; browsers that don't fire boundaries still get the
+    // synthetic syllable oscillation built into DexPinFace.
+    u.onboundary = () => setMouthPulse((c) => c + 1);
     u.onend = () => {
       utteranceRef.current = null;
       setState("idle");
@@ -1538,8 +1605,22 @@ function VoiceMode({ sessionId, email, onSessionUpdate, onMessage, onClose }) {
     error: error || "Voice not available",
   }[state];
 
+  // Map voice states onto the pin face's vocabulary.
+  const faceState =
+    state === "speaking" ? "responding" :
+    state === "listening" ? "listening" :
+    state === "thinking" ? "thinking" :
+    state === "error" ? "error" : "idle";
+
   return (
     <div className="dx-voice" role="dialog" aria-label="Dex voice mode">
+      {/* Fullscreen pin-art face — the visualizer IS the background. */}
+      <div className="dx-voice-bg" aria-hidden="true">
+        <DexPinFace state={faceState} mouthPulse={mouthPulse} />
+      </div>
+      {/* Bottom shade so captions stay readable over the pins. */}
+      <div className="dx-voice-shade" aria-hidden="true" />
+
       <button
         type="button"
         className="dx-voice-close"
@@ -1550,10 +1631,6 @@ function VoiceMode({ sessionId, email, onSessionUpdate, onMessage, onClose }) {
       </button>
 
       <div className="dx-voice-stage">
-        <div className={`dx-voice-orb is-${state}`}>
-          <DexCore />
-        </div>
-
         <div className={`dx-voice-state is-${state}`}>{stateLabel}</div>
 
         <div className="dx-voice-caption">
@@ -1719,6 +1796,269 @@ function DexGlyph({ small, large, pulsing }) {
 
 // ──────────────────────────────────────────────────────────────────────────
 
+// ──────────────────────────────────────────────────────────────────────────
+// JARVIS HUD widgets (gold + cyan hybrid). Added in the HUD redesign. These
+// are presentational only — every piece of trading logic stays in the
+// existing components. Gold (#FFD600) is the signal color; cyan (#00D4D4) is
+// the holographic chrome layer (frames, brackets, reticles, grids).
+// ──────────────────────────────────────────────────────────────────────────
+
+// Four L-shaped corner brackets that frame any positioned parent. Purely
+// decorative; pointer-events disabled so they never eat clicks.
+function HudCorners({ accent }) {
+  return (
+    <div className="dx-corners" aria-hidden="true" style={accent ? { color: accent } : undefined}>
+      <span className="dx-corner tl" />
+      <span className="dx-corner tr" />
+      <span className="dx-corner bl" />
+      <span className="dx-corner br" />
+    </div>
+  );
+}
+
+// Live HH:MM:SS readout for the top status bar. Ticks once a second.
+function HudClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const p = (n) => String(n).padStart(2, "0");
+  return (
+    <span className="dx-hud-clock">
+      {p(now.getHours())}:{p(now.getMinutes())}:
+      <span className="dx-hud-clock-s">{p(now.getSeconds())}</span>
+    </span>
+  );
+}
+
+// Thin scrolling ticker strip under the top bar — reads as a market data
+// feed. Static demo symbols, duplicated so the marquee loops seamlessly.
+const HUD_TICKER = [
+  { s: "SPX", p: "5,482.31", up: true, c: "+0.43%" },
+  { s: "NDX", p: "19,402.8", up: true, c: "+0.61%" },
+  { s: "BTC", p: "94,220", up: true, c: "+3.40%" },
+  { s: "ETH", p: "3,284.10", up: false, c: "-1.14%" },
+  { s: "NVDA", p: "132.88", up: true, c: "+1.80%" },
+  { s: "TSLA", p: "302.13", up: false, c: "-0.08%" },
+  { s: "DXY", p: "104.62", up: true, c: "+0.18%" },
+  { s: "GOLD", p: "2,649.5", up: true, c: "+0.27%" },
+];
+function MiniTicker() {
+  const row = [...HUD_TICKER, ...HUD_TICKER];
+  return (
+    <div className="dx-ticker" aria-hidden="true">
+      <div className="dx-ticker-track">
+        {row.map((t, i) => (
+          <span className="dx-ticker-item" key={i}>
+            <span className="dx-ticker-s">{t.s}</span>
+            <span className="dx-ticker-p">{t.p}</span>
+            <span className={t.up ? "dx-ticker-up" : "dx-ticker-dn"}>{t.c}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Maps an A–F grade to a 0–100 score for the radial gauge, and doubles as a
+// conviction fallback when the backend doesn't supply one.
+const GRADE_SCORE = {
+  "A+": 98, A: 92, "A-": 86, "B+": 80, B: 74, "B-": 68,
+  "C+": 60, C: 52, "C-": 46, D: 34, F: 16,
+};
+function gradeScore(letter) {
+  if (letter && letter in GRADE_SCORE) return GRADE_SCORE[letter];
+  return GRADE_SCORE[letter?.[0]] ?? 50;
+}
+
+const GRADE_BLURB = {
+  A: "All four indicators in alignment, clean zone entry, strong risk-reward.",
+  B: "Three of four aligned. One confirming factor is light, but the thesis holds.",
+  C: "Partial alignment. Valid idea, missing a key confirmation.",
+  D: "Conflicting signals present. One or two agree, others oppose the thesis.",
+  F: "Divergence or exhaustion. The indicators do not support this thesis.",
+};
+function gradeBlurb(letter) {
+  return GRADE_BLURB[letter?.[0]] || "Grade breakdown.";
+}
+
+// Radial grade gauge — an SVG ring that sweeps to the grade's score on mount,
+// with tick marks around the rim and the big letter in the middle. The
+// caller wraps it in a Tooltip that explains what the grade means.
+function GradeGauge({ letter, color, size = 92 }) {
+  const score = gradeScore(letter);
+  const r = 42;
+  const circ = 2 * Math.PI * r;
+  const [fill, setFill] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setFill(score), 80);
+    return () => clearTimeout(t);
+  }, [score]);
+  const dash = (fill / 100) * circ;
+  return (
+    <div className="dx-gauge" style={{ width: size, height: size, "--gc": color }}>
+      <svg viewBox="0 0 100 100" className="dx-gauge-svg" aria-hidden="true">
+        {Array.from({ length: 24 }).map((_, i) => {
+          const a = (i / 24) * Math.PI * 2;
+          const inner = i % 6 === 0 ? 43 : 45.5;
+          return (
+            <line
+              key={i}
+              x1={50 + Math.cos(a) * 47} y1={50 + Math.sin(a) * 47}
+              x2={50 + Math.cos(a) * inner} y2={50 + Math.sin(a) * inner}
+              className="dx-gauge-tick"
+            />
+          );
+        })}
+        <circle cx="50" cy="50" r={r} className="dx-gauge-track" />
+        <circle
+          cx="50" cy="50" r={r}
+          className="dx-gauge-arc"
+          style={{ stroke: color, strokeDasharray: `${dash} ${circ}` }}
+        />
+      </svg>
+      <div className="dx-gauge-center">
+        <span className="dx-gauge-letter" style={{ color }}>{letter}</span>
+        <span className="dx-gauge-label">GRADE</span>
+      </div>
+    </div>
+  );
+}
+
+// Parses a "1:2.3" / "1/2.3" risk-reward string into reward-per-unit-risk.
+function parseRR(rr) {
+  if (!rr) return null;
+  const m = String(rr).match(/(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const risk = parseFloat(m[1]);
+  const reward = parseFloat(m[2]);
+  if (!risk || !reward) return null;
+  return reward / risk;
+}
+// Horizontal HUD meter for risk-reward. Fills proportional to the ratio
+// (4:1 reads as full), with tick marks at 1×/2×/3×.
+function RRMeter({ value, color }) {
+  const ratio = parseRR(value);
+  const pct = ratio ? Math.max(8, Math.min(100, (ratio / 4) * 100)) : 0;
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setW(pct), 120);
+    return () => clearTimeout(t);
+  }, [pct]);
+  return (
+    <div className="dx-rr">
+      <div className="dx-rr-top">
+        <span className="dx-hud-label">RISK · REWARD</span>
+        <span className="dx-rr-val" style={{ color }}>{value || "—"}</span>
+      </div>
+      <div className="dx-rr-bar">
+        <div className="dx-rr-fill" style={{ width: `${w}%`, background: color, "--gc": color }} />
+        <span className="dx-rr-mark" style={{ left: "25%" }} />
+        <span className="dx-rr-mark" style={{ left: "50%" }} />
+        <span className="dx-rr-mark" style={{ left: "75%" }} />
+      </div>
+    </div>
+  );
+}
+
+// Small labelled HUD readout tile.
+function HudStat({ label, value, color }) {
+  return (
+    <div className="dx-hudstat">
+      <span className="dx-hudstat-l">{label}</span>
+      <span className="dx-hudstat-v" style={color ? { color } : undefined}>{value}</span>
+    </div>
+  );
+}
+
+// The four SootyEdge indicators as a HUD status array. Reads grade.indicators
+// when present (the demo grade + any future backend payload); otherwise it
+// derives a deliberately coarse, clearly-not-fabricated readout from the
+// fields we do have. Each module is a button that expands a one-line detail.
+const IND_DEFS = [
+  { key: "flow", name: "FLOW TRACKER" },
+  { key: "zones", name: "ACTION ZONES" },
+  { key: "dot", name: "SOOTY DOT" },
+  { key: "proplus", name: "PRO+ LEVELS" },
+];
+function deriveIndicators(grade) {
+  const conv = grade.conviction ?? gradeScore(grade.grade);
+  const tone = conv >= 66 ? "good" : conv >= 45 ? "warn" : "bad";
+  return {
+    flow: { state: grade.regime ? grade.regime.toUpperCase() : "—", level: conv, tone, detail: `Composite read: ${grade.regime || "regime n/a"} at ${conv}% conviction.` },
+    zones: { state: grade.setup_type ? grade.setup_type.toUpperCase() : "—", level: Math.min(100, conv + 6), tone: "info", detail: grade.setup_type ? `${grade.setup_type} setup in play around the active zone.` : "No setup tag provided for this grade." },
+    dot: { state: conv >= 60 ? "BULLISH" : conv >= 45 ? "MIXED" : "BEARISH", level: conv, tone, detail: conv >= 60 ? "Momentum is supporting the thesis." : conv >= 45 ? "Momentum is mixed; wait for confirmation." : "Momentum is working against the thesis." },
+    proplus: { state: grade.entry != null ? "LEVELS SET" : "—", level: grade.entry != null ? 100 : 0, tone: "info", detail: grade.entry != null ? "Entry, stop, and take-profit levels are plotted." : "No pivot levels available for this grade." },
+  };
+}
+function IndicatorPanel({ grade }) {
+  const data = grade.indicators || deriveIndicators(grade);
+  const [open, setOpen] = useState(null);
+  return (
+    <div className="dx-ind">
+      <div className="dx-ind-head">
+        <span className="dx-hud-label">INDICATOR ARRAY</span>
+        <span className="dx-ind-live"><span className="dx-online-dot" />LIVE</span>
+      </div>
+      <div className="dx-ind-rows">
+        {IND_DEFS.map((d) => {
+          const v = data[d.key] || {};
+          const lvl = Math.max(0, Math.min(100, v.level ?? 0));
+          const isOpen = open === d.key;
+          return (
+            <button
+              type="button"
+              key={d.key}
+              className={`dx-ind-row tone-${v.tone || "info"}${isOpen ? " is-open" : ""}`}
+              onClick={() => setOpen(isOpen ? null : d.key)}
+              title={v.detail ? "Click for detail" : undefined}
+            >
+              <span className="dx-ind-name">{d.name}</span>
+              <span className="dx-ind-state">{v.state || "—"}</span>
+              <span className="dx-ind-bar"><span className="dx-ind-fill" style={{ width: `${lvl}%` }} /></span>
+              {isOpen && v.detail && <span className="dx-ind-detail">{v.detail}</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Decorative targeting overlay laid over the candlestick chart: animated
+// corner ticks, a slow horizontal scan line, and a faint crosshair.
+// pointer-events:none so the chart keeps full mouse interaction underneath.
+function ChartReticle() {
+  return (
+    <div className="dx-reticle" aria-hidden="true">
+      <span className="dx-reticle-corner tl" />
+      <span className="dx-reticle-corner tr" />
+      <span className="dx-reticle-corner bl" />
+      <span className="dx-reticle-corner br" />
+      <span className="dx-reticle-cross-h" />
+      <span className="dx-reticle-cross-v" />
+      <span className="dx-reticle-scan" />
+    </div>
+  );
+}
+
+// Insight card that collapses on click — keeps the three teaching blocks
+// (Why / Learning / Risk) compact so the dashboard fits one viewport.
+function CollapsibleInsight({ title, body, color, alert }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className={`dx-ins${alert ? " is-alert" : ""}${open ? " is-open" : ""}`} style={{ "--ic": color }}>
+      <button type="button" className="dx-ins-head" onClick={() => setOpen((o) => !o)}>
+        <span className="dx-ins-dot" />
+        <span className="dx-ins-title">{title}</span>
+        <span className="dx-ins-chev">{open ? "−" : "+"}</span>
+      </button>
+      {open && <p className="dx-ins-body">{body}</p>}
+    </div>
+  );
+}
+
 const DEX_CSS = `
 .dx-app {
   position: fixed;
@@ -1757,6 +2097,16 @@ const DEX_CSS = `
   pointer-events: none;
 }
 .dx-grid-bg svg { width: 100%; height: 100%; display: block; }
+
+/* Pin-art face wall — sits above the grid layers, below all UI chrome.
+ * The canvas inside is transparent between pins, so the grid still peeks
+ * through the gaps for extra depth. */
+.dx-face-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
 /* Dim baseline — masked with a static center radial so the grid fades out
  * near the edges of the viewport (subtle vignette feel). */
 .dx-grid-bg-dim {
@@ -2233,6 +2583,22 @@ const DEX_CSS = `
   overflow-y: auto;
   position: relative;
   z-index: 2;
+  /* Cockpit feel: no visible scrollbar chrome. The reactor scales to the
+   * viewport (see Welcome), so this is just a safety net on extreme sizes. */
+  scrollbar-width: none;
+}
+.dx-welcome::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* On shorter viewports, tighten the vertical rhythm so the single-viewport
+ * cockpit keeps fitting without a scrollbar. */
+@media (max-height: 820px) {
+  .dx-welcome { padding: 18px 24px 22px; }
+  .dx-welcome-in { gap: 12px; }
+  .dx-welcome-avatar { margin-bottom: 0; }
+}
+@media (max-height: 680px) {
+  .dx-welcome { padding: 10px 24px 12px; }
+  .dx-welcome-in { gap: 8px; }
 }
 .dx-welcome-in {
   max-width: 560px;
@@ -2896,28 +3262,42 @@ const DEX_CSS = `
   border-color: rgba(255, 214, 0, 0.4);
 }
 
+/* Fullscreen pin-art face behind everything in voice mode. */
+.dx-voice-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+/* Bottom shade keeps the state label / captions / mic legible over the pins
+ * without dimming the face itself. */
+.dx-voice-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 7, 13, 0.30) 0%,
+    transparent 22%,
+    transparent 55%,
+    rgba(6, 7, 13, 0.62) 82%,
+    rgba(6, 7, 13, 0.88) 100%
+  );
+}
+
 .dx-voice-stage {
+  position: relative;
+  z-index: 2;
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 40px 28px 16px;
+  /* Text lives in the lower third now — the face owns the center. */
+  justify-content: flex-end;
+  padding: 40px 28px 10px;
   text-align: center;
-  gap: 28px;
-}
-
-.dx-voice-orb {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.dx-voice-orb.is-thinking { animation: dx-think-pulse 1.8s ease-in-out infinite; }
-.dx-voice-orb.is-speaking { animation: dx-think-pulse 1.0s ease-in-out infinite; }
-@keyframes dx-think-pulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.04); }
+  gap: 14px;
 }
 
 .dx-voice-state {
@@ -2940,6 +3320,7 @@ const DEX_CSS = `
   font-size: 17px;
   line-height: 1.55;
   color: #c8ccdb;
+  text-shadow: 0 1px 8px rgba(6, 7, 13, 0.9);
 }
 .dx-voice-cap-mine { color: #ffe69e; font-style: italic; }
 .dx-voice-cap-dex  { color: #d8dce8; }
@@ -2947,6 +3328,8 @@ const DEX_CSS = `
 .dx-voice-cap-err  { color: #f0c8c8; }
 
 .dx-voice-foot {
+  position: relative;
+  z-index: 2;
   padding: 0 28px 36px;
   display: flex;
   flex-direction: column;
@@ -3010,8 +3393,6 @@ const DEX_CSS = `
 }
 
 @media (max-width: 540px) {
-  .dx-voice-orb { width: 180px; height: 180px; }
-  .dx-voice-core { width: 110px; height: 110px; }
   .dx-voice-state { font-size: 22px; }
   .dx-voice-caption { font-size: 15.5px; }
   .dx-voice-mic { width: 72px; height: 72px; }
@@ -3685,5 +4066,288 @@ const DEX_CSS = `
   .dx-card-lvl-price { font-size: 16px; }
   .dx-card-lvl-reason { grid-column: 1 / -1; padding-left: 100px; }
   .dx-card-foot { padding: 10px 14px 12px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   JARVIS HUD LAYER  ·  gold (#FFD600) = signal · cyan (#00D4D4) = chrome
+   Added in the HUD redesign. Source-order overrides the legacy rules above.
+   ═══════════════════════════════════════════════════════════════════════ */
+.dx-hud {
+  --gold: #FFD600;
+  --gold-dim: rgba(255, 214, 0, 0.55);
+  --gold-faint: rgba(255, 214, 0, 0.10);
+  --cyan: #00D4D4;
+  --cyan-dim: rgba(0, 212, 212, 0.55);
+  --cyan-faint: rgba(0, 212, 212, 0.10);
+  --hud-line: rgba(0, 212, 212, 0.30);
+  --hud-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, Consolas, monospace;
+  background:
+    radial-gradient(ellipse at 50% -8%, #112530 0%, transparent 55%),
+    radial-gradient(ellipse at top, #0b0e16 0%, #06070d 72%);
+}
+
+/* Scanline overlay + slow vertical sweep across the whole frame */
+.dx-scanlines {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, rgba(0,212,212,0.028) 0px, rgba(0,212,212,0.028) 1px, transparent 1px, transparent 3px);
+  opacity: 0.6;
+}
+.dx-scanlines::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 160px; top: -160px;
+  background: linear-gradient(180deg, transparent, rgba(0,212,212,0.06), transparent);
+  animation: dx-sweep 8s linear infinite;
+}
+@keyframes dx-sweep { 0% { top: -160px; } 100% { top: 100%; } }
+
+/* Corner brackets — frame any positioned parent */
+.dx-corners { position: absolute; inset: 0; pointer-events: none; z-index: 6; color: var(--cyan-dim); }
+.dx-corner { position: absolute; width: 17px; height: 17px; border: 1.5px solid currentColor; opacity: 0.85; }
+.dx-corner.tl { top: 7px; left: 7px; border-right: none; border-bottom: none; }
+.dx-corner.tr { top: 7px; right: 7px; border-left: none; border-bottom: none; }
+.dx-corner.bl { bottom: 7px; left: 7px; border-right: none; border-top: none; }
+.dx-corner.br { bottom: 7px; right: 7px; border-left: none; border-top: none; }
+
+/* ── Top status bar ──────────────────────────────────────────────────── */
+.dx-hud .dx-top {
+  flex: 0 0 auto;
+  gap: 16px;
+  padding: 11px 22px 10px;
+  border-bottom: 1px solid var(--hud-line);
+  background: linear-gradient(180deg, rgba(0,212,212,0.04), transparent);
+}
+.dx-hud .dx-foot { flex: 0 0 auto; }
+.dx-top-l { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.dx-top-tag {
+  font-family: var(--hud-mono); font-size: 9px; letter-spacing: 0.3em;
+  color: var(--cyan); border: 1px solid var(--hud-line);
+  padding: 3px 8px; border-radius: 4px; white-space: nowrap;
+}
+.dx-top-c { display: flex; align-items: center; gap: 12px; flex: 1; justify-content: center; }
+.dx-top-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--hud-mono); font-size: 9.5px; letter-spacing: 0.16em;
+  color: #aeb6c4; border: 1px solid rgba(255,255,255,0.08);
+  padding: 5px 10px; border-radius: 6px; background: rgba(255,255,255,0.02);
+  white-space: nowrap;
+}
+.dx-top-chip-dim { color: #6c708a; }
+.dx-hud-clock {
+  font-family: var(--hud-mono); font-size: 13px; letter-spacing: 0.12em;
+  color: var(--gold); text-shadow: 0 0 12px rgba(255,214,0,0.30);
+}
+.dx-hud-clock-s { color: var(--cyan); }
+@media (max-width: 820px) { .dx-top-c { display: none; } }
+
+/* ── Ticker strip ────────────────────────────────────────────────────── */
+.dx-ticker {
+  flex: 0 0 auto;
+  position: relative; z-index: 4; overflow: hidden;
+  border-bottom: 1px solid rgba(0,212,212,0.16);
+  background: rgba(4,7,12,0.55);
+}
+.dx-ticker-track {
+  display: inline-flex; gap: 30px; padding: 6px 0; white-space: nowrap;
+  animation: dx-ticker-scroll 42s linear infinite; will-change: transform;
+}
+.dx-ticker-item { display: inline-flex; align-items: center; gap: 8px; font-family: var(--hud-mono); font-size: 11px; letter-spacing: 0.05em; }
+.dx-ticker-s { color: #9aa2b2; }
+.dx-ticker-p { color: #e3e6ee; }
+.dx-ticker-up { color: #03CD00; }
+.dx-ticker-dn { color: #FF5A5A; }
+@keyframes dx-ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ── Framed main window (single-viewport cockpit) ────────────────────── */
+.dx-window {
+  position: relative; flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  margin: 12px 14px; border: 1px solid var(--hud-line); border-radius: 14px;
+  background: linear-gradient(180deg, rgba(10,14,22,0.45), rgba(6,8,14,0.25));
+  box-shadow: inset 0 0 70px rgba(0,212,212,0.045), 0 20px 60px rgba(0,0,0,0.45);
+  overflow: hidden;
+}
+.dx-window > .dx-welcome,
+.dx-window > .dx-stream { flex: 1; min-height: 0; z-index: 2; }
+.dx-hud .dx-welcome { overflow-y: auto; }
+.dx-hud .dx-stream { padding: 18px 0; }
+
+/* ── Reactor frame around the welcome orb ────────────────────────────── */
+.dx-reactor {
+  position: relative; width: 320px; height: 320px;
+  display: flex; align-items: center; justify-content: center;
+}
+.dx-reactor-ring { position: absolute; border-radius: 50%; }
+.dx-reactor-ring.r1 { inset: 4px; border: 1px dashed rgba(0,212,212,0.20); animation: dxc-spin 60s linear infinite; }
+.dx-reactor-ring.r2 { inset: 30px; border: 1px solid rgba(255,214,0,0.12); animation: dxc-spin 40s linear infinite reverse; }
+.dx-reactor-readout {
+  position: absolute; font-family: var(--hud-mono); font-size: 9px;
+  letter-spacing: 0.22em; color: rgba(0,212,212,0.85); pointer-events: none;
+}
+.dx-reactor-readout.tl { top: 10px; left: 10px; }
+.dx-reactor-readout.tr { top: 10px; right: 10px; color: rgba(255,214,0,0.85); }
+.dx-reactor-readout.bl { bottom: 10px; left: 10px; }
+.dx-reactor-readout.br { bottom: 10px; right: 10px; }
+@media (max-width: 640px) { .dx-reactor { width: 260px; height: 260px; } }
+
+/* ════════════════ Graded JARVIS dashboard ════════════════ */
+.dx-dash {
+  position: relative; width: 100%;
+  background: linear-gradient(180deg, rgba(14,18,28,0.92), rgba(8,11,18,0.95));
+  border: 1px solid var(--hud-line); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55), inset 0 0 50px rgba(0,212,212,0.035);
+  animation: dx-msg-in 0.32s ease both;
+}
+
+/* Command bar */
+.dx-dash-head {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center;
+  padding: 16px 20px; border-bottom: 1px solid var(--hud-line);
+  background: linear-gradient(135deg, rgba(255,214,0,0.05), rgba(0,212,212,0.045));
+}
+.dx-dash-grade { display: flex; }
+.dx-dash-id { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.dx-dash-id-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.dx-dash-ticker { font-size: 28px; letter-spacing: 0.05em; color: #fff; line-height: 1; }
+.dx-dash-tf {
+  font-family: var(--hud-mono); font-size: 10px; letter-spacing: 0.14em; color: var(--cyan);
+  border: 1px solid var(--hud-line); padding: 3px 7px; border-radius: 4px;
+}
+.dx-dash-sig {
+  font-family: var(--hud-mono); font-size: 9px; letter-spacing: 0.18em; color: var(--gold);
+  border: 1px solid var(--gold-dim); padding: 3px 7px; border-radius: 4px;
+  box-shadow: 0 0 12px rgba(255,214,0,0.12);
+}
+.dx-dash-sub {
+  font-size: 11px; letter-spacing: 0.12em; color: #aeb6c4; text-transform: capitalize;
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+}
+.dx-dash-meters { display: flex; flex-direction: column; gap: 10px; min-width: 230px; }
+.dx-dash-stats { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Body grid */
+.dx-dash-body { display: grid; grid-template-columns: 1fr minmax(290px, 360px); }
+.dx-dash-main { padding: 16px; border-right: 1px solid var(--hud-line); min-width: 0; }
+.dx-dash-side { display: flex; flex-direction: column; background: rgba(8,11,18,0.45); min-width: 0; }
+
+/* Chart frame + reticle */
+.dx-chartframe {
+  position: relative; border: 1px solid rgba(0,212,212,0.20); border-radius: 10px;
+  background: rgba(0,0,0,0.35); overflow: hidden;
+}
+.dx-chartframe-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 8px 12px; border-bottom: 1px solid rgba(0,212,212,0.14);
+}
+.dx-chartframe-body { position: relative; padding: 8px 10px 6px; }
+.dx-reticle { position: absolute; inset: 8px; pointer-events: none; z-index: 3; }
+.dx-reticle-corner { position: absolute; width: 13px; height: 13px; border: 1px solid var(--cyan); opacity: 0.7; }
+.dx-reticle-corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+.dx-reticle-corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+.dx-reticle-corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+.dx-reticle-corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
+.dx-reticle-cross-h { position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(0,212,212,0.10); }
+.dx-reticle-cross-v { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(0,212,212,0.10); }
+.dx-reticle-scan {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(0,212,212,0.45), transparent);
+  animation: dx-scan-x 6s linear infinite;
+}
+@keyframes dx-scan-x { 0% { left: 0; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { left: 100%; opacity: 0; } }
+
+/* Level rail (reuses .dx-tp-chip styling from above) */
+.dx-levelrail { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+
+/* ── Radial grade gauge ──────────────────────────────────────────────── */
+.dx-gauge { position: relative; display: grid; place-items: center; }
+.dx-gauge-svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.dx-gauge-track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 4; }
+.dx-gauge-arc {
+  fill: none; stroke-width: 4; stroke-linecap: round;
+  filter: drop-shadow(0 0 6px var(--gc, #FFD600));
+  transition: stroke-dasharray 1.1s cubic-bezier(.22,1,.36,1);
+}
+.dx-gauge-tick { stroke: rgba(0,212,212,0.4); stroke-width: 1; }
+.dx-gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.dx-gauge-letter { font-size: 33px; font-weight: 800; line-height: 1; text-shadow: 0 0 18px currentColor; }
+.dx-gauge-label { font-family: var(--hud-mono); font-size: 8.5px; letter-spacing: 0.22em; color: #9aa0b4; }
+
+/* ── R:R meter ───────────────────────────────────────────────────────── */
+.dx-rr { display: flex; flex-direction: column; gap: 6px; }
+.dx-rr-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.dx-rr-val { font-family: var(--hud-mono); font-size: 14px; font-weight: 700; }
+.dx-rr-bar {
+  position: relative; height: 8px; border-radius: 5px;
+  background: rgba(255,255,255,0.06); overflow: hidden; border: 1px solid rgba(0,212,212,0.15);
+}
+.dx-rr-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; transition: width 1s cubic-bezier(.22,1,.36,1); box-shadow: 0 0 12px var(--gc, #FFD600); }
+.dx-rr-mark { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,0.5); }
+
+/* ── HUD labels + stat tiles ─────────────────────────────────────────── */
+.dx-hud-label { font-family: var(--hud-mono); font-size: 9.5px; letter-spacing: 0.2em; color: var(--cyan); text-transform: uppercase; }
+.dx-hud-sub { font-family: var(--hud-mono); font-size: 9.5px; letter-spacing: 0.08em; color: #8c92a8; }
+.dx-hudstat { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; background: rgba(0,212,212,0.04); border: 1px solid rgba(0,212,212,0.16); border-radius: 7px; min-width: 64px; }
+.dx-hudstat-l { font-family: var(--hud-mono); font-size: 8.5px; letter-spacing: 0.16em; color: #8c92a8; text-transform: uppercase; }
+.dx-hudstat-v { font-size: 12px; font-weight: 600; color: #e3e6ee; text-transform: capitalize; }
+
+/* ── Indicator array ─────────────────────────────────────────────────── */
+.dx-ind { padding: 14px 16px; border-bottom: 1px solid var(--hud-line); }
+.dx-ind-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.dx-ind-live { display: inline-flex; align-items: center; gap: 6px; font-family: var(--hud-mono); font-size: 8.5px; letter-spacing: 0.18em; color: #03CD00; }
+.dx-ind-rows { display: flex; flex-direction: column; gap: 7px; }
+.dx-ind-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; align-items: center;
+  width: 100%; text-align: left; padding: 8px 10px;
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+  border-left: 2px solid var(--cyan-dim); border-radius: 8px;
+  cursor: pointer; font-family: inherit; color: inherit;
+  transition: background 0.18s, border-color 0.18s, transform 0.12s;
+}
+.dx-ind-row:hover { background: rgba(0,212,212,0.06); transform: translateX(2px); }
+.dx-ind-row.tone-good { border-left-color: #03CD00; }
+.dx-ind-row.tone-warn { border-left-color: #FFD600; }
+.dx-ind-row.tone-bad { border-left-color: #FF3333; }
+.dx-ind-name { font-family: var(--hud-mono); font-size: 10px; letter-spacing: 0.1em; color: #c4ccd8; }
+.dx-ind-state { font-size: 11px; font-weight: 600; color: #e3e6ee; justify-self: end; }
+.dx-ind-bar { grid-column: 1 / -1; height: 4px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.dx-ind-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--gold)); transition: width 0.9s ease; }
+.dx-ind-detail { grid-column: 1 / -1; font-size: 11px; line-height: 1.5; color: #aeb6c4; margin-top: 4px; }
+
+/* ── Breakdown narrative ─────────────────────────────────────────────── */
+.dx-dash-narr { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 14px 16px; }
+.dx-dash-narr-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dx-dash-narr-body {
+  font-size: 13.5px; line-height: 1.6; color: #d8dce8; overflow-y: auto; max-height: 264px;
+  scrollbar-width: thin; scrollbar-color: rgba(0,212,212,0.22) transparent;
+}
+.dx-dash-narr-body::-webkit-scrollbar { width: 5px; }
+.dx-dash-narr-body::-webkit-scrollbar-thumb { background: rgba(0,212,212,0.22); border-radius: 3px; }
+.dx-dash-narr-body p { margin: 0 0 10px; }
+.dx-dash-narr-body p:last-child { margin-bottom: 0; }
+
+/* ── Collapsible insight cards ───────────────────────────────────────── */
+.dx-dash-insights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 14px 16px; border-top: 1px solid var(--hud-line); }
+.dx-ins { background: rgba(255,255,255,0.02); border: 1px solid color-mix(in srgb, var(--ic, #FFD600) 35%, rgba(255,255,255,0.08)); border-radius: 10px; overflow: hidden; align-self: start; }
+.dx-ins.is-alert { border-color: rgba(255,51,51,0.45); }
+.dx-ins-head { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; background: transparent; border: none; cursor: pointer; font-family: inherit; }
+.dx-ins-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ic, #FFD600); box-shadow: 0 0 8px var(--ic, #FFD600); flex-shrink: 0; }
+.dx-ins-title { flex: 1; text-align: left; font-family: var(--hud-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ic, #FFD600); }
+.dx-ins.is-alert .dx-ins-title { color: #FF6666; }
+.dx-ins-chev { color: #7a7e92; font-size: 15px; line-height: 1; }
+.dx-ins-body { margin: 0; padding: 0 12px 12px; font-size: 12.5px; line-height: 1.6; color: #d8dce8; }
+
+/* ── Dashboard responsive ────────────────────────────────────────────── */
+@media (max-width: 920px) {
+  .dx-dash-body { grid-template-columns: 1fr; }
+  .dx-dash-main { border-right: none; border-bottom: 1px solid var(--hud-line); }
+  .dx-dash-insights { grid-template-columns: 1fr; }
+  .dx-dash-head { grid-template-columns: auto 1fr; }
+  .dx-dash-meters { grid-column: 1 / -1; min-width: 0; }
+}
+@media (max-width: 720px) {
+  .dx-dash-ticker { font-size: 23px; }
+}
+@media (max-width: 640px) {
+  .dx-window { margin: 8px; }
+  .dx-levelrail { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 6px; }
 }
 `;
