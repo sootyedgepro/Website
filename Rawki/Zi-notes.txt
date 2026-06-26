@@ -1,0 +1,12 @@
+1. Compress the the responses from the charts using tooltips. npx shadcn@latest add https://21st.dev/r/originui/tooltip
+2. Voice can't sound like Steven Hawkins fuckin his chair.
+3. Enhance Processing animation -  npx shadcn@latest add https://21st.dev/r/aghasisahakyan1/loader
+4. Route Oauth for testing to sub out the Token Usage.
+5. Adobe font <link rel="stylesheet" href="https://use.typekit.net/jog8xav.css">
+6.1 New Dex animationnpx shadcn@latest add https://21st.dev/r/dhileepkumargm/anomalous-matter-hero 
+6.2 New Dex animation - npx shadcn@latest add https://21st.dev/r/serafimcloud/splite
+7. New Chat animation - npx shadcn@latest add https://21st.dev/r/jatin-yadav05/animated-ai-chat
+8.1 Profile page needs an avatar icon. npx shadcn@latest add https://21st.dev/r/shugar/avatar-1
+8.2 Needs 
+9. Pricing page for Dex. npx shadcn@latest add https://21st.dev/r/sshahaider/single-pricing-card-1
+10. Background. npx shadcn@latest add https://21st.dev/r/moazamtrade/the-infinite-grid
