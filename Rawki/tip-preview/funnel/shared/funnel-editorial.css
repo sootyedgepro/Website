@@ -1,0 +1,68 @@
+.tip-comparison-mount,.tip-plan-mount{min-width:0}
+.tip-editorial-comparison{max-width:1040px;gap:24px}
+.tip-editorial-comparison>article{border:0;background:none;padding:0;min-width:0}
+.tip-editorial-comparison .tip-comparison-card{height:100%;padding:30px 34px;border-radius:16px;--spotlight-card-surface:#0b141f!important;--spotlight-card-border:#6a819f33!important;--spotlight-card-shadow:0 20px 55px -25px #0009!important}
+.tip-editorial-comparison .tip-comparison-card.is-planned{--spotlight-card-surface:#0c1b2a!important;--spotlight-card-border:#5ab5ed55!important}
+.tip-editorial-comparison .comparison-label{font-size:10px;line-height:1.5;color:#a6b4c3;margin:0;letter-spacing:.12em}
+.tip-editorial-comparison .is-planned .comparison-label{color:#84caf3}
+.tip-editorial-comparison h3{font-size:clamp(30px,3.3vw,42px);letter-spacing:-.04em;line-height:1.12;margin:18px 0 0;color:#f0f4f8}
+.tip-editorial-comparison ul{list-style:none;padding:0;margin:22px 0 0}
+.tip-editorial-comparison li{font-size:14px;line-height:1.6;padding:12px 0;border-top:1px solid #8fa4bc20;color:#b5c6d7}
+.tip-editorial-comparison .tip-comparison-card:focus-visible{outline:2px solid #84caf3;outline-offset:4px}
+.tip-process-diagram{height:110px;position:relative;margin-top:20px}
+.tip-process-diagram svg{display:block;width:100%;height:90px;overflow:visible}
+.tip-diagram-track{stroke:#a9a8ad;stroke-width:1.1;opacity:.4}
+.tip-diagram-node{fill:#27333e;stroke:#b5ada6;stroke-width:1}
+.tip-process-diagram.is-planned .tip-diagram-track{stroke:#69b8e6;opacity:.65}
+.tip-process-diagram.is-planned .tip-diagram-node{stroke:#77c6f5;fill:#0e2638}
+.tip-diagram-direction{stroke:#77c6f5;stroke-width:1.3}
+.tip-process-diagram text{fill:#a6ddff;font-size:12px;font-family:inherit}
+.tip-diagram-labels{display:flex;justify-content:space-between;padding:0 5%;margin-top:-2px;color:#81adca;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+
+.tip-plan-workspace{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:center;gap:42px}
+.tip-plan-chart{min-width:0;margin:0;border:1px solid #7790b233;border-radius:14px;overflow:hidden;background:#07101c;box-shadow:0 35px 65px -28px #000b}
+.tip-plan-chart-bar{display:flex;align-items:center;gap:16px;padding:14px 17px;background:#101d2b;border-bottom:1px solid #7399ba22}
+.tip-plan-chart-bar>span:first-child{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.12em;color:#d1deea}
+.tip-plan-chart-bar i{width:5px;height:5px;border-radius:50%;background:#d6b964}
+.tip-plan-chart-bar>span:nth-child(2){font-size:11px;color:#92acc2}
+.tip-plan-chart-bar>button{margin-left:auto;border:0;background:none;color:#a2c5db;display:inline-flex;gap:8px;align-items:center;font:inherit;font-size:10px;cursor:pointer;min-height:28px}
+.tip-plan-image{position:relative;display:block;border:0;background:#090f20;padding:0;cursor:zoom-in;width:100%;aspect-ratio:1.72;overflow:hidden}
+.tip-plan-image>img{display:block;width:100%;height:100%;object-fit:contain}
+.tip-plan-image-affordance{position:absolute;left:14px;bottom:14px;display:inline-flex;gap:12px;padding:8px 11px;background:#05111edb;border:1px solid #7eadd933;border-radius:5px;font-size:10px;color:#d7e7f0;opacity:0;transform:translateY(4px);transition:opacity .2s ease,transform .2s ease;pointer-events:none}
+.tip-plan-image:is(:hover,:focus-visible) .tip-plan-image-affordance{opacity:1;transform:none}
+.tip-plan-chart figcaption{display:flex;justify-content:space-between;gap:16px;padding:15px 17px;font-size:10px;line-height:1.4;color:#88a3bb;background:#0b1825}
+.tip-plan-chart figcaption span:first-child{color:#bdd3e3}
+.tip-plan-steps{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.tip-plan-steps li{margin:0;padding:0}
+.tip-plan-steps button{display:grid;grid-template-columns:32px minmax(0,1fr) 18px;gap:15px;width:100%;text-align:left;align-items:start;padding:18px 16px;border:1px solid transparent;border-radius:10px;color:inherit;background:transparent;font:inherit;cursor:pointer;transition:background .2s ease,border-color .2s ease}
+.tip-plan-steps button[aria-pressed=true]{background:linear-gradient(110deg,#16436a80,#132a3e50);border-color:#6baddb44}
+.tip-plan-steps button:hover{background-color:#76c5ff08}
+.tip-plan-step-number{font-size:11px;line-height:1.8;color:#59738d;letter-spacing:.06em}
+.tip-plan-steps button[aria-pressed=true] .tip-plan-step-number{color:#75c8f6}
+.tip-plan-step-copy{display:grid;gap:7px}
+.tip-plan-step-copy strong{font-size:18px;line-height:1.25;letter-spacing:-.025em;color:#dfeaf3;font-weight:600}
+.tip-plan-step-copy>span{font-size:13px;line-height:1.6;color:#9eb4c9}
+.tip-plan-step-arrow{font-size:14px;color:#87bbdd;opacity:0}
+.tip-plan-steps button[aria-pressed=true] .tip-plan-step-arrow{opacity:1}
+.tip-plan-steps button:focus-visible,.tip-plan-chart button:focus-visible{outline:2px solid #86cffa;outline-offset:3px}
+.tip-plan-image:focus-visible{outline-offset:-3px!important}
+.tip-plan-image-dialog{width:min(96vw,1600px);max-width:96vw;max-height:92dvh;padding:0;border:1px solid #799bbc55;border-radius:12px;background:#0a1522;color:#dcebf5;box-shadow:0 30px 100px #000a}
+.tip-plan-image-dialog::backdrop{background:#01050be6;backdrop-filter:blur(5px)}
+.tip-plan-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 20px;font-size:12px}
+.tip-plan-dialog-head button{font:inherit;color:#cbe6f7;background:#132a3d;border:1px solid #6e92b344;border-radius:6px;padding:9px 13px;cursor:pointer;display:flex;align-items:center;gap:12px}
+.tip-plan-dialog-head button:focus-visible{outline:2px solid #84caf3;outline-offset:3px}
+.tip-plan-image-dialog>img{display:block;width:100%;max-height:calc(92dvh - 72px);object-fit:contain;background:#080e1b}
+
+/* Use Zi's own photograph; no synthetic candle graphics behind the finale. */
+body.tip-editorial-enhanced #class-takeaways{background:#030d15;isolation:isolate}
+body.tip-editorial-enhanced #class-takeaways:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#03101bd9,#03111b80 48%,#020b14e8),var(--tip-finale-photo,none) center 42%/cover no-repeat;opacity:1;mask-image:none;-webkit-mask-image:none;pointer-events:none;z-index:0}
+body.tip-editorial-enhanced #class-takeaways:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#030c16 0%,#030c1670 24%,#020a1455 55%,#020a14ed 91%,#020a14);opacity:1;mask-image:none;-webkit-mask-image:none;pointer-events:none;z-index:0}
+body.tip-editorial-enhanced #class-takeaways>.wrap{position:relative;z-index:1}
+body.tip-editorial-enhanced #class-takeaways h2 span{color:#86c9ef}
+body.tip-editorial-enhanced #class-takeaways .center-heading>p{color:#c1d3e1}
+body.tip-editorial-enhanced #class-takeaways .finale-host{filter:drop-shadow(0 12px 35px #01081190)}
+body.tip-editorial-enhanced #class-takeaways .tip-benefits-motion{padding:24px 20px;border-radius:14px;background:#071321dd;border:1px solid #8ab1cf26;box-shadow:0 20px 55px #01070e55}
+body.tip-editorial-enhanced #class-takeaways .finale-risk{color:#99adbf}
+@media(max-width:900px){.tip-plan-workspace{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}.tip-plan-steps button{padding:14px 10px;gap:10px;grid-template-columns:27px minmax(0,1fr) 14px}.tip-plan-step-copy strong{font-size:16px}.tip-plan-step-copy>span{font-size:12px}.tip-editorial-comparison .tip-comparison-card{padding:27px}.tip-plan-chart-bar{gap:10px;padding:12px}}
+@media(max-width:700px){.tip-editorial-comparison{grid-template-columns:minmax(0,1fr);gap:16px}.tip-editorial-comparison .tip-comparison-card{padding:26px}.tip-process-diagram{max-width:370px;margin-top:12px;height:100px}.tip-editorial-comparison ul{margin-top:15px}.tip-plan-workspace{grid-template-columns:minmax(0,1fr);gap:18px}.tip-plan-steps button{padding:16px 12px;grid-template-columns:30px minmax(0,1fr) 16px}.tip-plan-step-copy strong{font-size:17px}.tip-plan-step-copy>span{font-size:13px}.tip-plan-chart{width:100%;max-width:640px;margin-inline:auto}.tip-plan-image-affordance{opacity:1;transform:none;font-size:9px;padding:6px 9px;bottom:10px;left:10px}.tip-plan-chart figcaption{font-size:9px;padding:12px}.tip-plan-dialog-head{padding:12px;font-size:10px}body.tip-editorial-enhanced #class-takeaways:before{background-position:center,56% center}body.tip-editorial-enhanced #class-takeaways .tip-benefits-motion{padding:22px 16px}}
+@media(prefers-reduced-motion:reduce){.tip-plan-image-affordance,.tip-plan-steps button{transition:none;transform:none}}

@@ -1,0 +1,18 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Owner Preview//Traveling in Profit//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:tip-owner-review-2026-11-14@sootyedge-interactive-suite.rawki.chatgpt.s
+ ite
+DTSTAMP:20261108T045018Z
+DTSTART:20261114T170000Z
+DTEND:20261114T175500Z
+SUMMARY:Traveling in Profit — live class with Zi Morris
+DESCRIPTION:OWNER PREVIEW. This calendar entry is not a reservation. The si
+ te owner must confirm the schedule and joining instructions.
+URL:https://sootyedge-interactive-suite.rawki.chatgpt.site/travelinginprofi
+ t/classroom/
+LOCATION:Online — classroom preview; joining details supplied by the host
+END:VEVENT
+END:VCALENDAR

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" fill="none">
+  <!-- Decorative candlesticks and planning levels; no market data or return figures. -->
+  <g stroke="#159ff5" stroke-width="1">
+    <path d="M0 300H1440M0 540H1440M0 740H1440" stroke-dasharray="6 12" opacity=".55"/>
+    <path d="M0 508H1440V566H0Z" fill="#159ff5" fill-opacity=".055" stroke-opacity=".25"/>
+    <path d="M0 270H1440V330H0Z" fill="#159ff5" fill-opacity=".04" stroke-opacity=".2"/>
+  </g>
+  <g stroke="#159ff5" stroke-width="2.5" fill="#159ff5" fill-opacity=".13">
+    <path d="M80 580V790M136 558V735M192 606V786M248 520V712M304 456V655M360 480V662M416 392V580M472 360V540M528 410V600M584 458V650M640 416V600M696 332V540M752 278V473M808 308V492M864 246V440M920 192V398M976 238V436M1032 318V498M1088 350V540M1144 290V480M1200 240V426M1256 190V366M1312 234V406M1368 302V480"/>
+    <rect x="65" y="620" width="30" height="104" rx="2"/>
+    <rect x="121" y="590" width="30" height="76" rx="2"/>
+    <rect x="177" y="642" width="30" height="87" rx="2" fill-opacity=".025"/>
+    <rect x="233" y="558" width="30" height="99" rx="2"/>
+    <rect x="289" y="492" width="30" height="105" rx="2"/>
+    <rect x="345" y="522" width="30" height="86" rx="2" fill-opacity=".025"/>
+    <rect x="401" y="432" width="30" height="96" rx="2"/>
+    <rect x="457" y="395" width="30" height="83" rx="2"/>
+    <rect x="513" y="450" width="30" height="99" rx="2" fill-opacity=".025"/>
+    <rect x="569" y="500" width="30" height="96" rx="2" fill-opacity=".025"/>
+    <rect x="625" y="454" width="30" height="95" rx="2"/>
+    <rect x="681" y="373" width="30" height="108" rx="2"/>
+    <rect x="737" y="313" width="30" height="100" rx="2"/>
+    <rect x="793" y="348" width="30" height="90" rx="2" fill-opacity=".025"/>
+    <rect x="849" y="282" width="30" height="103" rx="2"/>
+    <rect x="905" y="236" width="30" height="105" rx="2"/>
+    <rect x="961" y="280" width="30" height="101" rx="2" fill-opacity=".025"/>
+    <rect x="1017" y="356" width="30" height="96" rx="2" fill-opacity=".025"/>
+    <rect x="1073" y="388" width="30" height="99" rx="2" fill-opacity=".025"/>
+    <rect x="1129" y="328" width="30" height="96" rx="2"/>
+    <rect x="1185" y="277" width="30" height="94" rx="2"/>
+    <rect x="1241" y="224" width="30" height="88" rx="2"/>
+    <rect x="1297" y="273" width="30" height="84" rx="2" fill-opacity=".025"/>
+    <rect x="1353" y="340" width="30" height="93" rx="2" fill-opacity=".025"/>
+  </g>
+  <g stroke="#159ff5" stroke-width="1" opacity=".55">
+    <path d="M728 98H1412M728 113H1412M1012 70V812"/>
+    <circle cx="1012" cy="300" r="8"/><circle cx="1012" cy="540" r="5"/>
+    <path d="M46 850H406M46 836H254M80 815V875M136 832V858M192 825V865M248 832V858M304 825V865M360 832V858"/>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+.tip-atmosphere{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.tip-atmosphere--journey{background:radial-gradient(ellipse at 22% 42%,#48210f 0%,#1b100c 48%,#080706 100%)}
+.tip-atmosphere--journey::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 32%,#110b0840 67%,#0c080680);pointer-events:none}
+body #journey[data-lanyard-background]{background:#100b08;color:#fff4e9}
+body #journey[data-lanyard-background] .story-copy{color:#fff4e9;background:none;text-shadow:0 2px 18px #12090455}
+body #journey[data-lanyard-background] .story-copy .eyebrow{color:#ffb878;font-weight:700;letter-spacing:.17em}
+body #journey[data-lanyard-background] .story-copy h2{color:#fff7ee}
+body #journey[data-lanyard-background] .story-copy h2 span{color:#ff9349}
+body #journey[data-lanyard-background] .story-copy>p{color:#dfc2af}
+body #journey[data-lanyard-background] .story-copy>p:first-of-type:not(.eyebrow),body #journey[data-lanyard-background] .story-copy .story-lead{color:#f9dbc6}
+body #journey[data-lanyard-background] .story-copy .story-note{color:#cba991;border-color:#f9731670}
+@media(max-width:700px){.tip-atmosphere--journey::after{background:linear-gradient(180deg,transparent 28%,#120b0870 62%,#0b080580)}body #journey[data-lanyard-background] .story-copy{padding-bottom:12px}}
+.tip-atmosphere--reserve{background:radial-gradient(ellipse at 25% 20%,#073d55,transparent 60%),#041320}
+.tip-atmosphere--reserve::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,#04132088 82%,#041320 100%),linear-gradient(90deg,#04132010,#04132033)}
+#reserve[data-lanyard-background] .tip-section-effect{height:100%;mask-image:linear-gradient(#000 72%,transparent 100%)}
+#reserve[data-lanyard-background]{background:#041320}
+.tip-candle-atmosphere{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at 55% 50%,#0a2538,#030b13 75%)}
+.tip-candle-atmosphere canvas{width:100%;height:100%;display:block;mask-image:linear-gradient(transparent,#000 28%,#000 78%,transparent)}
+body.tip-editorial-enhanced #class-takeaways::before{display:none}
+body.tip-editorial-enhanced #class-takeaways::after{background:linear-gradient(180deg,#030b1322,transparent 35%,#030b13cc);pointer-events:none}
+.tip-editorial-enhanced #class-takeaways>.wrap{position:relative;z-index:1}

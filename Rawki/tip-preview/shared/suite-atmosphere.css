@@ -1,0 +1,28 @@
+.clean-sooty{position:relative;isolation:isolate;background:#080e17}
+.clean-sooty .suite-atmosphere{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 92% 6%,#83632d1c,transparent 62%),#080e17}
+.clean-sooty .suite-atmosphere::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#080e1755,transparent 70%);pointer-events:none}
+.clean-sooty .suite-welcome{position:relative;padding-top:44px;padding-bottom:30px}
+.clean-sooty .suite-welcome-heading h1{color:#f8f3e9;text-shadow:0 2px 24px #050a14aa}
+.clean-sooty .suite-welcome-heading h1 em{color:#d7cba9}
+.clean-sooty .suite-welcome-copy{padding-left:24px;border-left:1px solid #e6c57c33}
+.clean-sooty .suite-welcome-facts{border-color:#d2b47933;color:#b0b9c7}
+.clean-sooty .suite-guidance-primary{box-shadow:inset 0 1px #fff1,0 8px 32px #d6ad4420;transition:background .2s,border-color .2s,transform .2s}
+.clean-sooty .suite-guidance-primary:hover{transform:translateY(-2px);box-shadow:inset 0 1px #fff2,0 8px 35px #d6ad4433}
+.clean-sooty .suite-start{padding-top:74px}
+.clean-sooty .suite-start-steps li{padding:24px 18px;border:1px solid #dac18828;border-top:2px solid #d7bc765c;border-radius:4px;background:linear-gradient(155deg,#d5be7410,#0d172344);transition:background .25s,transform .25s,border-color .25s}
+.clean-sooty .suite-start-steps li:hover{transform:translateY(-4px);border-color:#d7bc7680;background:linear-gradient(155deg,#d5be7420,#0d172377)}
+.clean-sooty .suite-demo .demo-workspace{box-shadow:0 18px 80px #0005,0 0 0 1px #d7bc7610}
+.clean-sooty .clean-faq{background:linear-gradient(110deg,#111d2960,#bca46408);border-radius:12px;padding:32px;margin:64px 0;border:1px solid #d7bc7625}
+.clean-sooty .clean-footer{position:relative;background:#080e17e8}
+@media(max-width:700px){
+ .clean-sooty .suite-welcome{padding-top:27px}
+ .clean-sooty .suite-welcome-copy{padding-left:0;border:0}
+ .clean-sooty .suite-start{padding-top:42px}
+ .clean-sooty .suite-start-steps{gap:12px}
+ .clean-sooty .suite-start-steps li{padding:18px 14px}
+ .clean-sooty .clean-faq{padding:24px 16px;margin:40px 0}
+}
+@media(prefers-reduced-motion:reduce){
+ .clean-sooty .suite-guidance-primary,.clean-sooty .suite-start-steps li{transition:none}
+ .clean-sooty .suite-guidance-primary:hover,.clean-sooty .suite-start-steps li:hover{transform:none}
+}

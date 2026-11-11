@@ -1,0 +1,79 @@
+/* Chart-first product view: the only guide surface floats inside the plot. */
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.clean-sooty{background:#0a1019}
+.clean-sooty .clean-header{padding-top:17px;padding-bottom:17px;border-bottom:0}
+.clean-sooty .clean-brand img{width:36px;height:42px}
+.clean-sooty .clean-brand small{font-size:8px}
+.clean-sooty main{padding-top:13px}
+.suite-demo .demo-workspace{display:block;position:relative;border:1px solid #9da8bd25;border-radius:8px;background:#0a1021;box-shadow:0 22px 70px #0003;overflow:visible}
+.demo-info{position:relative;z-index:20}
+.demo-info summary{display:grid;place-items:center;width:25px;height:25px;border:1px solid #8d9ab145;border-radius:50%;font:italic 13px Georgia,serif;color:#a8b1c3;cursor:pointer;list-style:none}
+.demo-info summary::-webkit-details-marker{display:none}
+.demo-info>div{position:absolute;right:0;top:34px;width:min(320px,80vw);background:#111a2b;border:1px solid #8493b13b;border-radius:9px;padding:18px;box-shadow:0 14px 40px #0008}
+.demo-info strong{font-size:13px}
+.demo-info p{font-size:12px;line-height:1.6;margin:8px 0 12px}
+.demo-info a{font-size:11px;text-decoration:underline!important;color:#dbc483!important}
+.suite-demo .demo-board{display:block;background:#0a1021;border-radius:8px;overflow:hidden}
+.chart-topbar{position:relative;z-index:6;min-height:49px;display:flex;align-items:center;gap:13px;background:#0b101a;border-bottom:1px solid #fff1;padding:6px 12px;color:#c2c9d6;box-sizing:border-box}
+.chart-symbol{display:flex;gap:9px;align-items:center}
+.chart-symbol svg{width:17px;height:20px;color:#ddbd6b}
+.chart-symbol strong{font-size:12px;letter-spacing:.02em;font-weight:500}
+.chart-symbol>span{font-size:10px;color:#8691a5}
+.chart-intervals{height:24px;padding:0 9px;border-left:1px solid #fff2;border-right:1px solid #fff2;display:flex;align-items:center;gap:5px}
+.chart-topbar button{background:none;border:0;padding:6px 8px;border-radius:3px;font-size:11px;color:#8d99ad;min-height:30px}
+.chart-topbar button[aria-pressed=true]{color:#fff;background:#8c9abb26}
+.chart-topbar button:hover{background:#8c9abb26;color:#fff}
+.chart-demo-label{font-size:10px;color:#8290a6}
+.chart-view-controls{margin-left:auto;display:flex;align-items:center;gap:3px}
+.chart-view-controls button{font-size:16px;min-width:30px}
+.chart-topbar .chart-guide-button{display:inline-flex;align-items:center;gap:5px;font-size:11px;margin-right:7px}
+.chart-guide-button svg{width:13px;height:13px}
+.chart-style{display:block;margin:0}
+.chart-style select{color:#b8c2d3;background:#0b101a;border:1px solid #7a8ba530;border-radius:4px;font:inherit;font-size:11px;padding:6px 20px 6px 7px;min-height:30px;cursor:pointer;max-width:90px}
+.chart-topbar button:disabled,.chart-style select:disabled{opacity:.4;cursor:default}
+.chart-topbar button:focus-visible,.chart-style select:focus-visible,.demo-info summary:focus-visible{outline:2px solid #d8bd79;outline-offset:2px}
+.chart-view-controls .demo-info{margin-left:6px}
+.suite-demo .demo-plot-wrap{position:relative;min-height:0;height:clamp(380px,calc(100svh - 210px),650px);background:linear-gradient(#292c32,#060f29)}
+.suite-demo .demo-chart{position:absolute;inset:0;width:100%;height:100%}
+.suite-demo .demo-chart:focus-visible{outline:1px solid #cdb578;outline-offset:-2px}
+.suite-demo .demo-static{opacity:.7}
+.suite-demo .demo-lock{background:#0b122d33;backdrop-filter:blur(5px)}
+.suite-demo .demo-lock>div{padding:24px 25px;max-width:370px;border:1px solid #c4cfe326;border-radius:14px;background:#111a2bbd;backdrop-filter:blur(24px);box-shadow:0 20px 55px #0004}
+.suite-demo .demo-lock img{width:40px;height:45px;object-fit:contain;display:block;margin:0 auto 15px}
+.suite-demo .demo-lock h3{font-size:24px;color:#e8ebf2;letter-spacing:-.02em}
+.suite-demo .demo-lock p{font-size:12px;color:#9fadc4;line-height:1.6;margin:10px 0 18px}
+.suite-demo .demo-lock button{font-size:12px;min-height:40px;padding:9px 19px}
+.suite-demo .demo-guide-dock{position:absolute;z-index:4;left:22px;bottom:66px;width:min(405px,calc(100% - 105px));pointer-events:none;padding:0;margin:0;border:0;background:none;min-height:0;display:block}
+.suite-demo .demo-speech{position:relative;pointer-events:auto;padding:10px 13px 12px;background:linear-gradient(120deg,#ffffff10,#101b2e45),#0d17295e;border:1px solid #e3edff33;border-radius:12px;box-shadow:inset 0 1px 0 #ffffff14,0 10px 30px #0003;backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%)}
+.suite-demo .demo-speech:before{content:none}
+.suite-demo .demo-speech{isolation:isolate}
+.suite-demo .demo-specular-edge{position:absolute;inset:-1px;z-index:0;pointer-events:none;border-radius:inherit}
+.suite-demo .demo-specular-surface{display:block;width:100%;height:100%;padding:0;border-radius:inherit;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none;cursor:inherit;transition:none}
+.suite-demo .demo-specular-surface:active{transform:none}
+.suite-demo .demo-specular-surface .specular-button__label{display:none}
+.suite-demo .demo-speech-heading,.suite-demo .demo-speech p{position:relative;z-index:1}
+.suite-demo .demo-speech-heading{display:flex;align-items:center;gap:10px;min-height:25px}
+.suite-demo [data-chapter]{color:#e4c77a;font-weight:500;font-size:12px}
+.suite-demo [data-step-count]{font-size:9px;color:#8898b2}
+.suite-demo .demo-speech p{font-size:12px;line-height:1.55;color:#c5cedf;margin:4px 0 0;max-width:48ch}
+.suite-demo .demo-speech-controls{display:flex;align-items:center;gap:2px;margin-left:auto}
+.suite-demo .demo-speech-controls button{display:grid;place-items:center;background:transparent;border:0;color:#a1b1c9;width:27px;height:27px;min-height:27px;padding:0;border-radius:5px;font-size:15px}
+.suite-demo .demo-speech-controls button:hover{background:#ffffff13;color:#f7e8bd}
+.suite-demo .demo-guide-restore{pointer-events:auto;border:1px solid #c7d5ef30;border-radius:20px;background:#111c3190;backdrop-filter:blur(14px);padding:7px 12px;font-size:11px;color:#cdd6e8;display:flex;align-items:center;gap:5px}
+.suite-demo .demo-guide-restore svg{width:13px;height:13px}
+.suite-demo .demo-attribution{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 0;color:#68768e;font-size:9px}
+.suite-demo .demo-attribution button{padding:5px 0;background:none;border:0;color:inherit;font:inherit}
+.suite-demo .demo-attribution a{text-decoration:none!important}
+.clean-sooty .clean-activation{display:none}
+@media(max-width:800px){.chart-symbol>span{display:none}.chart-topbar{gap:8px}.clean-sooty .clean-header{padding:16px 23px}.clean-sooty main{padding:0 23px}.suite-demo .demo-speech p{font-size:12px}}
+@media(max-width:600px){
+ .clean-sooty .clean-header{padding:13px 16px;gap:12px}.clean-sooty .clean-brand>span{font-size:19px}.clean-sooty .clean-brand img{width:31px;height:36px}.clean-sooty .clean-nav-cta{font-size:10px;padding:8px 10px;min-height:36px}.clean-sooty main{padding:0 10px}
+ .chart-topbar{min-height:0;padding:7px 8px;gap:7px;flex-wrap:wrap}.chart-symbol{gap:5px}.chart-symbol strong{font-size:10px}.chart-symbol svg{width:14px}.chart-intervals{padding:0 5px;gap:0}.chart-topbar button{padding:5px 7px;font-size:10px}.chart-view-controls{gap:0;width:100%;justify-content:flex-end;border-top:1px solid #ffffff0d;padding-top:4px}.chart-view-controls button{font-size:14px;min-width:25px}.chart-demo-label{font-size:8px;margin-left:auto}.chart-style select{font-size:10px;max-width:80px;padding-right:8px}.chart-topbar .chart-guide-button{margin-right:auto;font-size:10px}.chart-view-controls .demo-info{margin-left:8px}
+ .suite-demo .demo-plot-wrap{height:clamp(420px,calc(100svh - 195px),570px)}
+ .suite-demo .demo-guide-dock{left:13px;bottom:64px;width:calc(100% - 91px)}
+ .suite-demo .demo-speech{padding:8px 10px 10px;border-radius:10px}
+ .suite-demo .demo-speech-heading{gap:6px}.suite-demo [data-chapter]{font-size:11px}.suite-demo [data-step-count]{font-size:8px}
+ .suite-demo .demo-speech p{font-size:11px;line-height:1.5;margin-top:5px}
+ .suite-demo .demo-speech-controls{gap:0}.suite-demo .demo-speech-controls button{width:25px;height:28px;min-height:28px;font-size:13px}
+ .suite-demo .demo-attribution{font-size:8px;margin:5px 5px 0}
+}

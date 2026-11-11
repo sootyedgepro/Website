@@ -1,0 +1,14 @@
+{
+  "site": "sootyedge",
+  "mode": "owner-preview",
+  "sites": [
+    {
+      "name": "sootyedge",
+      "url": "/"
+    },
+    {
+      "name": "travelinginprofit",
+      "url": "/travelinginprofit/"
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+#journey[data-lanyard-background],#reserve[data-lanyard-background]{position:relative;isolation:isolate;overflow:hidden}
+.tip-section-effect{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+#journey[data-lanyard-background]{background:#dceeff}
+#reserve[data-lanyard-background]{background:#041327}
+#reserve .tip-section-effect{height:min(100%,950px);opacity:.7}
+#journey[data-lanyard-background] .wrap,#reserve[data-lanyard-background] .wrap{position:relative;z-index:1}
+#journey .story-photo.tip-story-lanyard{background:none;border:0;box-shadow:none;overflow:visible;transform:none;align-self:center;margin:0;max-width:100%;width:100%}
+.tip-badge-scene{width:100%;max-width:100%;min-width:0}
+.tip-badge-stage{position:relative;height:610px;width:100%;isolation:isolate}
+.tip-badge-stage>.lanyard{position:absolute;inset:0}
+.tip-badge-stage .lanyard-canvas{touch-action:pan-y}
+.tip-badge-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:58px 36px 18px}
+.tip-badge-fallback img{width:auto!important;height:100%!important;max-width:100%;object-fit:contain!important;border-radius:16px;box-shadow:0 18px 40px #001a4140;position:relative}
+.tip-badge-fallback-strap{position:absolute;top:0;left:calc(50% - 13px);width:26px;height:100px;background:repeating-linear-gradient(90deg,#09447a 0 2px,#0d5792 2px 4px);border-radius:0 0 8px 8px}
+.tip-badge-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 20px;margin:0 auto;color:#23466a;font:400 12px/1.5 var(--body);padding:0 12px}
+.tip-badge-actions button{display:inline-flex;gap:14px;align-items:center;min-height:40px;border:1px solid #27699955;border-radius:999px;background:#e7f5ffb3;padding:8px 17px;color:#164874;font:600 12px/1.5 var(--body);cursor:pointer}
+.tip-badge-actions button:hover{background:#fff}.tip-badge-actions button:focus-visible{outline:3px solid #008be5;outline-offset:3px}
+#journey[data-lanyard-background] .story-copy{background:linear-gradient(100deg,#edf7ff40,#edf7ff00);border-radius:24px;padding:20px 0}
+#journey[data-lanyard-background] .story-note{color:#43617b}
+#reserve[data-lanyard-background] .registration-inner{align-items:start;gap:clamp(28px,5vw,72px)}
+.tip-ticket-registration{min-width:0}
+.tip-ticket-heading>.eyebrow{font-size:11px!important;letter-spacing:.15em;color:#9bddff!important;margin:0 0 14px!important}
+.tip-ticket-heading>h2{font-size:clamp(28px,3.1vw,43px)!important;line-height:1.12!important;margin:0!important;max-width:500px;letter-spacing:-.025em}
+.tip-ticket-heading>h2 br{display:none}.tip-ticket-heading>h2 br::after{content:' '}
+.tip-ticket-heading>h2 span{display:block;color:#83cfff}
+.tip-badge-scene--ticket .tip-badge-stage{height:350px;margin:0 auto -10px}
+.tip-badge-scene--ticket .tip-badge-stage>.lanyard{width:116%;left:-8%;right:auto}
+.tip-badge-scene--ticket .tip-badge-actions{color:#b9d6e9;justify-content:space-between;padding:0 2px;margin-bottom:17px}
+.tip-badge-scene--ticket .tip-badge-actions button{color:#c6eaff;background:#113b566b;border-color:#68b8d35c}
+.tip-badge-scene--ticket .tip-badge-actions button:hover{background:#16567b}
+.tip-badge-scene--ticket .tip-badge-fallback{padding:45px 12px 12px}
+.tip-badge-scene--ticket .tip-badge-fallback img{max-height:100%;max-width:100%;width:auto!important;height:auto!important}
+.tip-ticket-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px 22px;padding:19px 21px;border:1px solid #88d2f52c;border-radius:16px;background:#04162b99;backdrop-filter:blur(16px)}
+.tip-ticket-controls>.review-local-time{width:100%;padding:0!important;margin:0!important;background:transparent!important;border:0!important;display:grid;gap:9px}
+.tip-ticket-controls>.review-local-time strong{font-size:10px;letter-spacing:.12em;color:#8bc8e8}
+.tip-ticket-controls>.review-local-time [role=status]{font-size:15px;color:#e0f1ff}
+.tip-ticket-controls>.review-local-time select{min-height:43px;font-size:14px;background:#0c2a45;color:#eef8ff;border-color:#639cc453}
+.tip-ticket-controls>a{font-size:13px!important;line-height:1.5!important;color:#b9e7ff!important;margin:0!important;max-width:100%;overflow-wrap:anywhere}
+.tip-ticket-controls>.tip-classroom-link{padding:0!important;background:none!important;border:0!important;border-radius:0!important;text-decoration:underline;text-underline-offset:4px;min-height:auto!important}
+.tip-ticket-event-source{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.tip-ticket-disclosure>p{font-size:14px!important;line-height:1.6!important;color:#bbd1e4!important;margin:16px 0 0!important}
+.tip-ticket-disclosure>.offer-disclosure{font-size:12px!important;color:#9db9d1!important}
+@media(max-width:900px){.tip-badge-stage{height:530px}.tip-badge-scene--ticket .tip-badge-stage{height:300px}.tip-ticket-heading>h2{font-size:30px!important}.tip-ticket-controls{padding:17px}.tip-badge-actions{font-size:11px}}
+@media(max-width:700px){#journey[data-lanyard-background]{padding-top:40px;padding-bottom:50px}#journey .story-grid{gap:24px}.tip-badge-stage{height:540px;max-width:490px;margin:auto}.tip-badge-actions{margin-top:-5px}.tip-badge-scene--ticket .tip-badge-stage{height:350px;max-width:520px}.tip-ticket-heading>h2{font-size:34px!important}.tip-ticket-heading{max-width:560px;margin:auto}.tip-ticket-composition{max-width:560px;margin:auto}#reserve[data-lanyard-background] .registration-inner{gap:35px}.tip-badge-scene--ticket .tip-badge-actions{margin-top:0}.tip-ticket-disclosure{padding-inline:2px}}
+@media(max-width:400px){.tip-badge-stage{height:470px}.tip-badge-scene--ticket .tip-badge-stage{height:295px}.tip-badge-actions{gap:6px 12px}.tip-badge-actions button{padding:7px 13px}.tip-ticket-heading>h2{font-size:30px!important}}
+@media(prefers-reduced-motion:reduce){#journey[data-lanyard-background]{background:linear-gradient(125deg,#dceeff,#b6dcf7 50%,#edf7ff)}#reserve[data-lanyard-background]{background:radial-gradient(ellipse at 15% 15%,#0b4261,#041327 70%)}.tip-badge-fallback{padding-top:65px}.tip-badge-stage{height:570px}.tip-badge-scene--ticket .tip-badge-stage{height:335px}}
+/* The strap starts at the section seam; the badge keeps its original landing area. */
+#journey[data-lanyard-background]{--journey-inset:80px;padding-top:var(--journey-inset);overflow:hidden}
+#journey[data-lanyard-background] .story-grid{position:relative;isolation:isolate}
+#journey[data-lanyard-background] .story-copy{position:relative;z-index:1;background:none;border-radius:0;padding:20px 0}
+#journey .story-photo.tip-story-lanyard{position:static;min-height:620px;align-self:stretch}
+#journey .tip-badge-scene{position:static}
+#journey .tip-badge-stage{position:absolute;top:calc(-1 * var(--journey-inset));left:0;width:100%;height:calc(100% + var(--journey-inset));pointer-events:none;isolation:auto}
+#journey .tip-badge-stage>.lanyard{overflow:visible}
+#journey .tip-badge-stage .lanyard-canvas{pointer-events:none}
+#journey .tip-badge-actions{position:absolute;bottom:0;left:0;width:43%;z-index:4;padding:0 14px;gap:5px 12px}
+#journey .tip-badge-actions>span{width:100%;text-align:center}
+#journey .tip-badge-actions button{color:#57311e;background:#fff3e6a8;border-color:#bd672b55}
+#journey .tip-badge-actions button:hover{background:#fff5e9}
+#journey .tip-badge-actions button[aria-pressed=true]{background:#fce3cb;border-color:#be682e}
+#journey .tip-badge-fallback{right:auto;width:43%;padding-top:150px;padding-bottom:70px}
+#journey .tip-badge-fallback-strap{height:190px;background:repeating-linear-gradient(90deg,#b8491e 0 2px,#e96924 2px 4px)}
+#journey .tip-badge-stage::before{content:'';position:absolute;top:0;left:21.5%;width:50px;height:7px;transform:translateX(-50%);border-radius:0 0 5px 5px;background:#36271c;box-shadow:0 3px 7px #0005;z-index:2}
+@media(max-width:900px) and (min-width:701px){#journey[data-lanyard-background]{--journey-inset:62px}#journey .story-photo.tip-story-lanyard{min-height:590px}}
+@media(max-width:700px){#journey[data-lanyard-background]{--journey-inset:0px;padding-top:0}#journey .story-photo.tip-story-lanyard{min-height:0}#journey .tip-badge-scene{position:relative;padding-bottom:54px}#journey .tip-badge-stage{position:relative;top:0;width:100%;height:590px}#journey .tip-badge-stage::before{left:50%}#journey .tip-badge-actions{width:100%;bottom:0}#journey .tip-badge-fallback{width:100%;padding-top:115px;padding-bottom:30px}#journey .story-copy{padding:10px 0 0!important}#journey .story-grid{gap:24px}#journey .tip-badge-fallback-strap{height:140px}}
+@media(max-width:400px){#journey .tip-badge-stage{height:530px}}
+/* The section viewport is the canvas boundary; the badge itself owns its focus
+   affordance. The former instruction/actions box is no longer rendered. */
+#journey .tip-badge-stage{max-width:none;margin:0}
+#journey .tip-badge-stage::before{left:var(--journey-anchor,21.5%)}
+#journey .tip-badge-scene{min-height:620px}
+#journey .tip-badge-keyboard{position:absolute;left:var(--journey-anchor,21.5%);top:24%;transform:translateX(-50%);width:25%;height:62%;padding:0;border:0;border-radius:18px;background:none;outline:none;pointer-events:none;cursor:grab}
+#journey .tip-badge-keyboard:focus-visible{outline:3px solid #f3782f;outline-offset:5px;box-shadow:0 0 0 6px #fff6}
+.tip-badge-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media(max-width:900px) and (min-width:701px){#journey .tip-badge-scene{min-height:590px}}
+@media(max-width:700px){#journey .tip-badge-scene{min-height:0;padding-bottom:0}#journey .tip-badge-keyboard{left:50%;top:21%;width:68%;height:66%}}

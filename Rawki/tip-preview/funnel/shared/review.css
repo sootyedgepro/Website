@@ -1,0 +1,107 @@
+/* Authored enhancements. Original brand CSS stays in each app's public directory. */
+@import url('./marketing.css');
+@import url('./suite-bubbles.css');
+@import url('./funnel-ui.css');
+html{scroll-behavior:smooth;scroll-padding-top:100px}
+[data-review-site]{--review-accent:#d5b34d;--review-ink:#f5f5f5;--review-surface:#11120f;--review-border:#cdaa3748}
+[data-review-site=travelinginprofit]{--review-accent:#82c5ff;--review-ink:#f5f8ff;--review-surface:#091c36;--review-border:#87caff55}
+.review-toolbar,.review-chip,.review-dialog,.review-drawer,.review-sticky,.review-enhancement,.review-status{font-family:inherit}
+.review-toolbar{position:relative;z-index:150;min-height:42px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;padding:8px 18px;background:#20211e;color:#fff;border-bottom:1px solid #ffffff24;font-size:12px;line-height:1.4}
+.review-toolbar strong{color:var(--review-accent);font-size:12px}
+.review-toolbar button,.review-toolbar a{color:#fff;background:transparent;border:1px solid #ffffff55;padding:5px 10px;border-radius:4px;font:inherit;text-decoration:none;cursor:pointer;min-height:30px}
+.review-toolbar button:hover,.review-toolbar a:hover{border-color:var(--review-accent);color:var(--review-accent)}
+.review-chip{position:fixed;bottom:18px;right:18px;z-index:1500;border:1px solid var(--review-accent);background:#101310;color:var(--review-accent);padding:12px 16px;border-radius:30px;box-shadow:0 8px 30px #0008;font-weight:600;cursor:pointer}
+.review-enhancement{color:var(--review-ink)}
+.review-compare{max-width:1120px;margin:0 auto;padding:54px 24px 20px}
+.review-compare h2{font:500 clamp(25px,3vw,36px)/1.2 "Exo 2",Arial,sans-serif;margin-bottom:12px}
+.review-compare>p{font-size:14px;line-height:1.7;color:#bcbdb6;max-width:680px;margin-bottom:26px}
+.review-compare table{width:100%;border-collapse:collapse;text-align:left;font-size:14px;line-height:1.5}
+.review-compare th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--review-accent);padding:12px 14px;border-bottom:1px solid var(--review-border)}
+.review-compare td{padding:20px 14px;border-bottom:1px solid #ffffff1c;vertical-align:top}
+.review-compare td:first-child{font-weight:600;color:#fff;min-width:140px}
+.review-compare td span{display:block;font-size:12px;font-weight:400;color:#b5b6b0;margin-top:5px}
+.review-compare button,.review-text-button{border:0;background:transparent;color:var(--review-accent);text-decoration:underline;text-underline-offset:5px;cursor:pointer;font:inherit;padding:10px 0;min-height:44px}
+.review-guide-link{display:inline-flex;align-items:center;min-height:44px;color:var(--review-accent);text-underline-offset:5px;text-decoration:underline;font-size:13px;margin-top:14px}
+.review-bridge{max-width:1080px;margin:30px auto;padding:20px 24px;border:1px solid var(--review-border);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:20px;background:var(--review-surface);line-height:1.6;font-size:14px}
+.review-bridge a{color:var(--review-accent);white-space:nowrap;text-decoration:underline;text-underline-offset:4px}
+.review-local-time{padding:18px 20px;border:1px solid #8bcfff65;border-radius:10px;background:#6ebcff14;margin:20px 0;color:#fff;font-size:15px;line-height:1.6}
+.review-local-time strong{display:block;color:#b8dfff;font-size:12px;letter-spacing:.04em;margin-bottom:7px}
+.review-local-time select{margin-top:12px;width:100%;border:1px solid #ffffff50;border-radius:6px;background:#102844;color:white;padding:10px;min-height:44px;font:inherit;font-size:13px}
+.review-local-time option{color:white;background:#102844}
+.review-dialog{position:fixed;inset:0;margin:auto;background:#11130f;color:#f3f3ec;border:1px solid #d5b34d66;border-radius:16px;padding:0;width:min(650px,calc(100% - 28px));max-height:90dvh;box-shadow:0 30px 120px #000b;z-index:10000}
+[data-review-site=travelinginprofit] .review-dialog{background:#0a1c35;border-color:#82c5ff66}
+.review-dialog::backdrop,.review-drawer::backdrop{background:#000b;backdrop-filter:blur(6px)}
+.review-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid #ffffff26;padding:20px 24px}
+.review-dialog-head h2{font-size:20px;line-height:1.3;margin:0;font-family:inherit;color:inherit}
+.review-dialog-head button{border:1px solid #ffffff70;border-radius:6px;min-height:40px;padding:7px 12px;background:transparent;color:#fff;cursor:pointer;font:inherit;font-size:13px}
+.review-dialog-body{padding:24px}
+.review-dialog-body p{font-size:14px;line-height:1.7;color:#c3c8c0;margin-bottom:16px}
+.review-dialog-body h3{font-size:24px;line-height:1.2;margin:8px 0 16px;color:#fff;font-family:inherit}
+.review-dialog-body ul,.review-dialog-body ol{padding-left:22px;font-size:14px;line-height:1.8;margin:14px 0 20px}
+.review-dialog-body .review-demo-note{background:#ffffff0b;border-left:3px solid var(--review-accent);padding:12px 14px;color:#e2e4dd;font-size:12px;line-height:1.6;margin-bottom:20px}
+.review-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.review-primary,.review-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:12px 18px;border-radius:6px;font-size:14px;font-family:inherit;font-weight:600;line-height:1.3;cursor:pointer;text-decoration:none}
+.review-primary{color:#11130e;background:var(--review-accent);border:1px solid var(--review-accent)}
+.review-secondary{color:var(--review-ink);background:transparent;border:1px solid #ffffff60}
+.review-primary:disabled{opacity:.65;cursor:wait}
+.review-fields{display:grid;gap:16px}
+.review-fields label{display:grid;gap:7px;color:#e9eae3;font-size:13px;line-height:1.5}
+.review-fields input,.review-fields select,.review-fields textarea{font-family:inherit;font-size:16px;background:#ffffff09;color:#fff;border:1px solid #ffffff50;min-height:46px;border-radius:6px;padding:10px 12px;width:100%;box-sizing:border-box}
+.review-fields input:focus,.review-fields textarea:focus{border-color:var(--review-accent);outline:2px solid var(--review-accent);outline-offset:2px}
+.review-fields select option{background:#131a20;color:white}
+.review-fields small{font-size:12px;color:#aeb6ac}
+.review-fields .review-cookie-choice{display:flex;align-items:center;gap:10px}
+.review-fields .review-cookie-choice input{width:18px;height:18px;min-height:18px;accent-color:var(--review-accent)}
+.review-price{font-size:38px!important;line-height:1.2!important;font-weight:600;color:var(--review-accent)!important}
+.review-price small{font-size:13px;color:#c6cabc;font-weight:400}
+.review-status{font-size:13px;line-height:1.6;margin:14px 0;padding:12px 15px;border-radius:6px;background:#bd383820;color:#ffd9d9;border:1px solid #ff9c9c50}
+.review-status[data-kind=success]{background:#43ad6020;color:#d3ffdf;border-color:#88d59a60}
+.registration-card .review-status{background:#fff0ee;color:#9d2424;border-color:#a82d2d70}
+.registration-card .review-status[data-kind=success]{background:#eefbf1;color:#17632d;border-color:#23804770}
+.review-chart-dialog{width:min(1250px,calc(100% - 24px));height:min(900px,92dvh);max-height:92dvh}
+.review-chart-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 16px;border-bottom:1px solid #ffffff26}
+.review-chart-controls button{border:1px solid #ffffff55;background:transparent;color:#fff;padding:8px 12px;border-radius:5px;min-height:38px;cursor:pointer;font:13px Arial,sans-serif}
+.review-chart-controls span{font:13px Arial,sans-serif;color:#c8cec5}
+.review-chart-scroll{overflow:auto;max-height:calc(92dvh - 180px);background:#111728;padding:12px}
+.review-chart-scroll img{display:block;max-width:none;height:auto;transform:none!important;object-fit:contain}
+.review-chart-caption{font:12px/1.5 Arial,sans-serif;color:#b8c1b1;padding:12px 18px;margin:0}
+.review-drawer{position:fixed;inset:0 0 0 auto;margin:0;height:100dvh;max-height:100dvh;width:min(460px,100%);max-width:100%;background:#111b29;color:#f4f7fb;border:0;border-left:1px solid #ffffff35;padding:0;box-shadow:-12px 0 80px #0008;z-index:12000}
+.review-drawer .review-dialog-body{overflow-y:auto;height:calc(100dvh - 84px)}
+.review-drawer p{color:#c6d1de}
+.review-checklist{display:grid;gap:18px}
+.review-checklist fieldset{border:1px solid #ffffff28;border-radius:8px;padding:14px}
+.review-checklist legend{font-size:14px;line-height:1.5;color:#fff;padding:0 5px}
+.review-checklist label{font-size:12px;color:#c4d1e0;display:flex;align-items:center;gap:7px;margin:9px 0}
+.review-checklist textarea{width:100%;min-height:70px;margin-top:6px;background:#ffffff08;color:white;border:1px solid #ffffff40;border-radius:5px;padding:9px;font:13px Arial,sans-serif;resize:vertical;box-sizing:border-box}
+.review-save-note{font-size:12px!important;color:#aebed3!important}
+.review-sticky{position:fixed;inset:auto 0 0;z-index:1000;background:#071b32f5;border-top:1px solid #9aceff60;backdrop-filter:blur(10px);padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:none;align-items:center;gap:12px;justify-content:space-between;color:white}
+.review-sticky p{font-size:12px;line-height:1.4;margin:0}
+.review-sticky p strong{font-size:13px;display:block;color:#b6ddff}
+.review-sticky a{background:#8ecbff;color:#06162b;padding:12px 18px;border-radius:6px;font-weight:700;text-decoration:none;font-size:13px;white-space:nowrap}
+.review-sticky[hidden]{display:none!important}
+.review-enhancement[data-hidden=true]{display:none}
+html[data-review-enhanced=false] .review-enhancement,html[data-review-enhanced=false] .review-sticky{display:none!important}
+:where(.review-toolbar,.review-dialog,.review-drawer,.review-enhancement,.review-chip,.review-sticky) :focus-visible{outline:3px solid var(--review-accent);outline-offset:4px}
+@media(max-width:680px){
+ .review-toolbar{justify-content:flex-start;font-size:10px;gap:7px;padding:7px 12px}
+ .review-toolbar>span{flex:1;min-width:150px}
+ .review-toolbar button,.review-toolbar a{font-size:10px}
+ .review-chip{font-size:11px;padding:10px 13px;bottom:16px;right:12px}
+ [data-review-site=travelinginprofit] .review-chip{bottom:90px}
+ .review-compare{padding:38px 18px 12px}
+ .review-compare th{font-size:9px;padding:9px 6px}
+ .review-compare td{font-size:12px;padding:15px 6px}
+ .review-compare td:first-child{min-width:94px}
+ .review-compare th:nth-child(3),.review-compare td:nth-child(3){display:none}
+ .review-bridge{margin:20px 16px;display:block;padding:18px;font-size:13px}
+ .review-bridge a{display:block;margin-top:12px}
+ .review-sticky{display:flex}
+ [data-review-site=travelinginprofit] body{padding-bottom:82px}
+ .review-dialog-head{padding:17px}
+ .review-dialog-body{padding:19px}
+ .review-dialog-head h2{font-size:18px}
+ .review-dialog{width:calc(100% - 20px)}
+ .review-chart-scroll{max-height:calc(90dvh - 210px)}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+

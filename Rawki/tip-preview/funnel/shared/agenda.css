@@ -1,0 +1,54 @@
+.agenda-react{height:620px;width:var(--agenda-viewport-width,100%);max-width:none;position:relative;left:50%;transform:translateX(-50%);margin:40px 0 0}
+.agenda-flowing-menu{overflow:hidden}
+.agenda-flowing-menu .flowing-menu__link{grid-template-columns:minmax(0,1fr) auto!important;gap:24px;padding:22px max(28px,calc((100% - 1120px)/2))}
+.agenda-flowing-menu .flowing-menu__index{display:none}
+.agenda-flowing-menu .flowing-menu__label{font-size:clamp(23px,2.35vw,32px);line-height:1.2;white-space:normal;letter-spacing:-.045em;overflow:visible}
+.agenda-flow-topic{display:flex;flex-direction:column;gap:9px}
+.agenda-flow-topic>strong{font-family:var(--heading,Montserrat,sans-serif);font-weight:700;line-height:1.2;text-wrap:balance}
+.agenda-flow-description{font-size:16px;font-weight:400;line-height:1.55;letter-spacing:0;color:#526d84;max-width:770px}
+.agenda-flowing-menu .flowing-menu__end{gap:16px;transition:opacity .18s}
+.agenda-flowing-menu .flowing-menu__meta{font-size:11px;letter-spacing:.07em;color:#176ca6;opacity:1;white-space:nowrap}
+.agenda-flowing-menu .flowing-menu__arrow{color:#247fb7;opacity:1}
+.agenda-flowing-menu .flowing-menu__item[data-current] .flowing-menu__end{opacity:0}
+.agenda-flowing-menu .flowing-menu__track{position:relative;z-index:2}
+.agenda-flowing-menu .flowing-menu__part-text{font-family:'Montserrat ExtraBold',var(--heading,Montserrat,sans-serif);font-size:clamp(42px,5.65vw,80px);font-weight:800;line-height:1;letter-spacing:-.055em;text-transform:uppercase;padding-inline:.38em;text-shadow:0 3px 24px #0007}
+.agenda-flowing-menu .flowing-menu__part:nth-child(even) .flowing-menu__part-text{color:#fff3;-webkit-text-stroke:1px #ffffffd9;text-shadow:0 2px 16px #0005}
+.agenda-flowing-menu .flowing-menu__float-layer{overflow:hidden}
+.agenda-flowing-menu .flowing-menu__photo{position:absolute;inset:-4%;background-size:cover;opacity:1;filter:brightness(1.14) saturate(1.12);animation:agenda-photo-drift 11s ease-in-out infinite alternate;animation-play-state:paused;will-change:transform}
+.agenda-flowing-menu .flowing-menu__photo::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#06172457,#091e3230 45%,#07172548),linear-gradient(#06172466,transparent 36%,transparent 68%,#06172466)}
+.agenda-flowing-menu[data-in-view] .flowing-menu__item[data-current] .flowing-menu__photo,.agenda-flowing-menu[data-in-view] .flowing-menu__float-layer[data-active] .flowing-menu__photo{animation-play-state:running}
+.agenda-flowing-menu .flowing-menu__caption{position:absolute;z-index:3;left:0;right:0;overflow:hidden;pointer-events:none;color:#e4f4ff}
+.agenda-flowing-menu .flowing-menu__caption--top{top:15px}
+.agenda-flowing-menu .flowing-menu__caption--bottom{bottom:15px}
+.agenda-flowing-menu .flowing-menu__caption-track{display:flex;width:max-content;animation:agenda-caption-scroll 35s linear infinite;animation-play-state:paused}
+.agenda-flowing-menu[data-in-view] .flowing-menu__float-layer[data-active] .flowing-menu__caption-track,.agenda-flowing-menu[data-in-view] .flowing-menu__item[data-current] .flowing-menu__band .flowing-menu__caption-track{animation-play-state:running}
+.agenda-flowing-menu .flowing-menu__caption--top .flowing-menu__caption-track{animation-direction:reverse}
+.agenda-flowing-menu .flowing-menu__caption-track>span{display:block;flex:none;white-space:nowrap;font-family:var(--heading,Montserrat,sans-serif);font-size:11px;font-weight:600;line-height:1.5;letter-spacing:.12em;text-transform:uppercase;padding-right:70px;text-shadow:0 1px 8px #000b}
+.agenda-flowing-menu .flowing-menu__link:focus-visible{outline:none}
+.agenda-flowing-menu .flowing-menu__item:focus-within::after{content:'';position:absolute;inset:4px;border:2px solid #9ce0ff;z-index:5;pointer-events:none}
+.agenda-flow-sr-time{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@keyframes agenda-caption-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes agenda-photo-drift{from{transform:translate3d(-.8%,-.5%,0) scale(1.015)}to{transform:translate3d(.8%,.5%,0) scale(1.075)}}
+html[data-motion='paused'] .agenda-flowing-menu .flowing-menu__photo,html[data-motion='paused'] .agenda-flowing-menu .flowing-menu__caption-track{animation-play-state:paused!important}
+@media(max-width:700px){
+ .agenda-react{height:720px;margin-top:28px}
+ .agenda-flowing-menu .flowing-menu__link{gap:12px;padding:20px 22px}
+ .agenda-flowing-menu .flowing-menu__label{font-size:22px}
+ .agenda-flow-description{font-size:14px;line-height:1.5}
+ .agenda-flowing-menu .flowing-menu__end{flex-direction:column;gap:8px;align-items:flex-end}
+ .agenda-flowing-menu .flowing-menu__meta{font-size:9px}
+ .agenda-flowing-menu .flowing-menu__part-text{font-size:48px}
+ .agenda-flowing-menu .flowing-menu__caption-track>span{font-size:10px;letter-spacing:.1em}
+ .agenda-flowing-menu .flowing-menu__caption--top{top:22px}
+ .agenda-flowing-menu .flowing-menu__caption--bottom{bottom:22px}
+}
+@media(max-width:420px){.agenda-flowing-menu .flowing-menu__label{font-size:19px}.agenda-flow-description{font-size:13px}}
+@media(prefers-reduced-motion:reduce){
+ .agenda-flowing-menu .flowing-menu__photo{animation:none;transform:none;will-change:auto}
+ .agenda-flowing-menu .flowing-menu__caption-track{animation:none;width:100%;padding-inline:20px;box-sizing:border-box}
+ .agenda-flowing-menu .flowing-menu__caption-track>span{white-space:normal;padding-right:0;font-size:12px;text-align:center;width:100%}
+ .agenda-flowing-menu .flowing-menu__caption-track>span:not(:first-child),.agenda-flowing-menu .flowing-menu__caption--bottom{display:none}
+ .agenda-flowing-menu .flowing-menu__track{transform:none!important;width:100%;justify-content:center}
+ .agenda-flowing-menu .flowing-menu__part:not(:first-child){display:none}
+ .agenda-flowing-menu .flowing-menu__part-text{white-space:normal;text-align:center;font-size:26px;padding-top:20px}
+}

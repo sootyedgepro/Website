@@ -1,0 +1,58 @@
+/* Actual React Bits CardSwap + Waves; original member evidence stays intact. */
+#clients.member-results-waves-section{position:relative;isolation:isolate;overflow:hidden;background:#151a22;color:#e7edf5;padding-block:68px}
+#clients.member-results-waves-section>.wrap{position:relative;z-index:1}
+#clients.member-results-waves-section .center-heading h2{color:#f3f7fc}
+#clients.member-results-waves-section .center-heading h2 span{color:#7acaff}
+#clients.member-results-waves-section .center-heading>p{color:#b6c4d6}
+#clients.member-results-waves-section .center-heading .eyebrow{color:#78c5f5}
+#clients.member-results-waves-section .results-context{color:#aebccc;margin:18px auto 0}
+#clients.member-results-waves-section .results-context p{color:inherit}
+#clients.member-results-waves-section .section-cta{margin-top:28px}
+.member-waves-background{position:absolute;inset:0;z-index:0;pointer-events:none;mask-image:linear-gradient(transparent,#000 15%,#000 85%,transparent)}
+#clients .member-results-grid.member-results-deck{display:block;max-width:880px;margin:30px auto 0;gap:0;position:relative;overflow:visible}
+.member-deck{min-width:0;width:100%;position:relative;isolation:isolate}
+.member-deck-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.member-deck-stage{position:relative;width:100%;min-width:0;overflow:visible;isolation:isolate}
+.member-deck-react,.member-deck,.member-card-swap,.member-card-swap .card-swap-stage{overflow:visible}
+.member-card-swap{position:relative;width:100%;height:100%;max-width:100%;margin:0}
+.member-card-swap .card-swap-slot{box-shadow:0 14px 26px -14px #000b,0 0 0 1px #b7c8dd40;user-select:none;-webkit-user-select:none}
+.member-window,.member-window *{user-select:none;-webkit-user-select:none}
+.member-card-swap .card-swap-slot:not([data-front]){box-shadow:0 -3px 12px #0005,0 0 0 1px #b7c8dd65}
+.member-window{display:flex;flex-direction:column;background:#38393f;color:#f3f8ff}
+.member-window--static{position:relative;height:100%;border-radius:12px;overflow:hidden;box-shadow:0 16px 36px -22px #071a3670}
+.member-window--static:focus-visible{outline:3px solid #087ed1;outline-offset:-3px}
+.member-window-header{flex:none;background:#2e3037;border-bottom:1px solid #bdc9d626;padding:9px 20px}
+.member-window .member-result-header{display:flex;justify-content:space-between;gap:16px;align-items:center;margin:0;padding:0;min-height:0;border:0}
+.member-window .member-result-header h3{font-size:18px;line-height:1.1;color:#f5faff;margin:3px 0 0;overflow-wrap:anywhere}
+.member-window .result-source{color:#aab8c8;font-size:8px;letter-spacing:.12em;line-height:1.2;margin:0}
+.member-window .result-date{font-size:10px;line-height:1.4;text-align:right;color:#bfc8d3;max-width:150px;margin:0}
+.member-window-body{display:grid;grid-template-columns:minmax(0,.34fr) minmax(0,.66fr);flex:1;min-height:0}
+.member-window-image{min-width:0;min-height:0;background:#38393f}
+.member-window .member-window-image figure{height:100%;margin:0;padding:6px;box-sizing:border-box;background:none;border:0;overflow:hidden;display:grid;place-items:center;container-type:size}
+.member-window .result-image-link{display:block;position:relative;min-width:0;min-height:0;width:min(100cqw,calc(100cqh * var(--member-image-ratio,1)));height:min(100cqh,calc(100cqw / var(--member-image-ratio,1)));padding:0;box-sizing:border-box;overflow:hidden;outline-offset:-3px;-webkit-user-drag:none}
+.member-window .result-image-link img{position:absolute;top:0;left:0;display:block;width:var(--member-image-width,100%);height:100%;max-width:none;max-height:none;object-fit:fill;object-position:left center;margin:0;border:0;border-radius:0;-webkit-user-drag:none}
+.member-window .result-image-link:focus-visible{outline:3px solid #8ed8ff}
+.member-window-details{display:flex;flex-direction:column;justify-content:center;gap:12px;min-width:0;padding:18px;background:#38393f;overflow-y:auto}
+.member-window .result-figure{margin:0;padding:0;border:0}
+.member-window .result-figure strong{display:block;font-size:clamp(30px,3.7vw,43px);line-height:1.1;letter-spacing:-.045em;color:#83d995;white-space:nowrap;font-variant-numeric:tabular-nums}
+.member-window .result-figure span{display:block;font-size:12px;line-height:1.6;color:#b3d0e9;margin-top:9px}
+.member-window blockquote{font-size:20px;font-weight:600;line-height:1.45;letter-spacing:-.02em;margin:0;color:#edf6ff;padding:0;border:0}
+.member-window .result-context{font-size:14px;line-height:1.65;color:#b3c9dc;margin:0;padding:0}
+.member-quiet-navigation{position:absolute;right:8px;bottom:8px;display:flex;gap:6px}
+.member-quiet-navigation button{width:36px;height:32px;border:1px solid #b9c7d55c;border-radius:6px;background:#24262d;color:#fff;cursor:pointer}
+.member-quiet-navigation button:focus-visible{outline:2px solid #83d3ff;outline-offset:2px}
+.member-window--static .member-window-details{padding-bottom:46px}
+.member-deck--compact .member-window-header{padding:8px 12px}
+.member-deck--compact .member-result-header{gap:8px;min-height:0;align-items:center}
+.member-deck--compact .member-result-header h3{font-size:15px}
+.member-deck--compact .result-source{font-size:7px;letter-spacing:.08em}
+.member-deck--compact .result-date{max-width:80px;font-size:9px}
+.member-deck--compact .member-window-body{grid-template-columns:minmax(0,.42fr) minmax(0,.58fr)}
+.member-deck--compact .member-window-details{padding:10px;gap:12px}
+.member-deck--compact .member-window-image figure{padding:4px}
+.member-deck--compact .result-figure strong{font-size:clamp(16px,4.5vw,29px)}
+.member-deck--compact .result-figure span{font-size:10px;line-height:1.5}
+.member-deck--compact .member-window blockquote{font-size:14px;line-height:1.4}
+.member-deck--compact .result-context{font-size:11px;line-height:1.6}
+@media(max-width:650px){#clients.member-results-waves-section{padding-block:46px}.member-deck--compact .result-date{font-size:8px;max-width:90px}}
+@media(prefers-reduced-motion:reduce){.member-window .result-image-link img{transition:none}.member-window .result-image-link:hover img{transform:none}}

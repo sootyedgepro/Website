@@ -1,0 +1,45 @@
+/* A room-sized projection behind the content, independent of Backlight's
+   filtered player wrapper. Black video pixels add no light in screen mode. */
+.classroom-video-ambient{
+  --ambient-color:0 0 0;
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  overflow:hidden;
+  pointer-events:none;
+  mix-blend-mode:screen;
+  opacity:0;
+  transition:opacity 1.1s ease;
+}
+.classroom-video-ambient[data-active][data-visible=true]{opacity:.9}
+.classroom-video-ambient__projection{
+  position:absolute;
+  left:var(--ambient-left,0px);
+  top:var(--ambient-top,0px);
+  width:var(--ambient-width,0px);
+  height:var(--ambient-height,0px);
+  opacity:0;
+  filter:blur(clamp(40px,5.5vw,88px)) saturate(1.65) brightness(1.55);
+  -webkit-mask-image:radial-gradient(ellipse at center,#000 27%,#000000e0 48%,#0000006b 68%,transparent 88%);
+  mask-image:radial-gradient(ellipse at center,#000 27%,#000000e0 48%,#0000006b 68%,transparent 88%);
+  transition:opacity .85s ease;
+}
+.classroom-video-ambient__wash{
+  position:absolute;
+  left:var(--ambient-center-x,50vw);
+  top:var(--ambient-center-y,30vh);
+  width:max(100vw,calc(var(--ambient-player-width,0px)*2));
+  height:max(80vh,calc(var(--ambient-player-height,0px)*2.7));
+  transform:translate(-50%,-44%);
+  background:radial-gradient(ellipse at center,rgb(var(--ambient-color)/.42),rgb(var(--ambient-color)/.18) 32%,transparent 70%);
+  filter:saturate(1.35);
+}
+.classroom-video-ambient[data-mode=sampled] .classroom-video-ambient__projection{opacity:1}
+.classroom-video-ambient[data-mode=static] .classroom-video-ambient__wash{
+  background:radial-gradient(ellipse at center,#c4a96a16,#c4a96a08 32%,transparent 70%);
+}
+.classroom-video-ambient[data-quiet],.classroom-video-ambient[data-quiet] .classroom-video-ambient__projection{transition:none}
+@media(prefers-reduced-motion:reduce){
+  .classroom-video-ambient,.classroom-video-ambient__projection{transition:none}
+  .classroom-video-ambient__projection{display:none}
+}

@@ -1,0 +1,10 @@
+#tools .market-chart-header{flex-wrap:wrap;gap:14px}
+.tip-suite-link{display:inline-flex;align-items:center;white-space:nowrap;font-size:13px;font-weight:600;padding:11px 14px;border:1px solid #7bc8ff66;border-radius:7px;color:#9edbff!important;text-decoration:none}
+.tip-suite-link:hover{background:#82c5ff15;border-color:#9edbff}
+.tip-suite-link:focus-visible,.tip-classroom-link:focus-visible{outline:3px solid #82c5ff;outline-offset:4px}
+.tip-classroom-link{display:inline-flex;align-items:center;gap:8px;margin-top:18px;font-size:14px;color:#8cd4ff;text-underline-offset:5px}
+#meet-zi .tip-classroom-link{color:#086bad}
+@media(max-width:640px){#tools .market-chart-header{gap:10px;padding:14px}.tip-suite-link{padding:10px 12px}.market-chart-tabs{order:3;width:100%}.tip-classroom-link{line-height:1.5}}
+
+.registration-inner>*{min-width:0}.review-local-time select{width:100%;max-width:100%;min-width:0}.registration-stepper-mount{min-width:0}.tip-registration-stepper .stepper{max-width:100%}
+@media(max-width:700px){.registration-inner{grid-template-columns:minmax(0,1fr)!important}}
